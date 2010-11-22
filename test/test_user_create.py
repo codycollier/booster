@@ -22,52 +22,60 @@ class TestUserCreate(boostertest.BoosterTestCase):
         self.user1['role-names'] = "admin"
         self.user1['permissions'] = ""
         self.user1['collections'] = ""
-        # keep track of created users
-        self.created_users = []
+        # keep track of created users for later teardown
+        self.teardown_users = []
 
     def tearDown(self):
         """ Remove any create test users """
-        for user in self.created_users:
-            params = {}
-            params['action'] = "user-delete"
+        params = {}
+        params['action'] = "user-delete"
+        for user in self.teardown_users:
             params['user-name'] = user
             response, body = self.booster.request(params)
             self.assertTrue(response.status in (200,404))
 
     def test_basic_user_creation_results_in_201(self):
         """ A successful user creation should result in 201 """
-        self.params.update(self.user1)
-        self.created_users.append(self.params['user-name'])
-        response, body = self.booster.request(self.params)
-        err = response.get("x-booster-error", "")
+        params = self.params
+        params.update(self.user1)   # merge in user1 data
+        self.teardown_users.append(params['user-name'])
+        response, body = self.booster.request(params)
+        err = response.get("x-booster-error", "none")
         self.assertEqual(response.status, 201)
+        self.assertEqual(err, "none")
 
     def test_user_creation_with_multiple_roles_succeeds(self):
         """ A user creation with multiple roles should succeed """
-        self.params.update(self.user1)
-        self.params['role-names'] = "app-user,alert-user"
-        self.created_users.append(self.params['user-name'])
-        response, body = self.booster.request(self.params)
-        err = response.get("x-booster-error", "")
+        params = self.params
+        params.update(self.user1)   # merge in user1 data
+        params['role-names'] = "app-user,alert-user"
+        self.teardown_users.append(params['user-name'])
+        response, body = self.booster.request(params)
+        err = response.get("x-booster-error", "none")
         self.assertEqual(response.status, 201)
+        self.assertEqual(err, "none")
 
     def test_user_creation_with_multiple_permission_succeeds(self):
         """ A user creation with multiple permission pairs should succeed """
-        self.params.update(self.user1)
-        self.params['permissions'] = "app-user,read;app-user,update"
-        self.created_users.append(self.params['user-name'])
-        response, body = self.booster.request(self.params)
-        err = response.get("x-booster-error", "")
+        params = self.params
+        params.update(self.user1)   # merge in user1 data
+        params['permissions'] = "app-user,read;app-user,update"
+        self.teardown_users.append(params['user-name'])
+        response, body = self.booster.request(params)
+        err = response.get("x-booster-error", "none")
         self.assertEqual(response.status, 201)
+        self.assertEqual(err, "none")
 
     def test_user_creation_with_multiple_collections_succeeds(self):
         """ A user creation with multiple collections should succeed """
-        self.params.update(self.user1)
-        self.params['collections'] = "http://marklogic.com/xdmp/alert, http://marklogic.com/xdmp/triggers"
-        self.created_users.append(self.params['user-name'])
-        response, body = self.booster.request(self.params)
-        err = response.get("x-booster-error", "")
+        params = self.params
+        params.update(self.user1)   # merge in user1 data
+        params['collections'] = "http://marklogic.com/xdmp/alert, http://marklogic.com/xdmp/triggers"
+        self.teardown_users.append(params['user-name'])
+        response, body = self.booster.request(params)
+        err = response.get("x-booster-error", "none")
         self.assertEqual(response.status, 201)
+        self.assertEqual(err, "none")
 
     def test_no_user_name_results_in_400(self):
         """ A non-existent user-name value should result in 400 """
@@ -85,6 +93,21 @@ class TestUserCreate(boostertest.BoosterTestCase):
         err = response.get("x-booster-error", "")
         self.assertEqual(response.status, 400)
         #self.assertTrue(err.find("") != 1)
+
+    def test_create_user_with_invalid_name_results_in_500(self):
+        """ Invalid user names should be rejected by api and result in 500 """
+        params = self.params
+        params.update(self.user1)   # merge in user1 data
+        badnames = ("hows##", "fli$%")
+        for badname in badnames:
+            params = self.params
+            params['user-name'] = badname
+            # create should result in 500
+            response, body = self.booster.request(params)
+            err = response.get("x-booster-error", "none")
+            self.assertEqual(response.status, 500)
+            self.assertTrue(err.find("Error running action 'user-create'") != -1)
+            self.assertTrue(err.find("Error: Invalid lexical value") != -1)
 
 
 
