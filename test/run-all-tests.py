@@ -34,7 +34,8 @@ import random
 
 if __name__=="__main__":
   
-    all_modules = ("test_boundaries", "test_group_create", "test_user_create")
+    all_modules = ("test_boundaries", "test_group_create", "test_user_create", 
+            "test_user_delete")
 
     # create a master_suite of test module suites
     master_suite = unittest.TestSuite()

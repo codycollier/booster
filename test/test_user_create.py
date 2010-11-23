@@ -26,7 +26,7 @@ class TestUserCreate(boostertest.BoosterTestCase):
         self.teardown_users = []
 
     def tearDown(self):
-        """ Remove any create test users """
+        """ Remove any created test users """
         params = {}
         params['action'] = "user-delete"
         for user in self.teardown_users:
@@ -34,7 +34,7 @@ class TestUserCreate(boostertest.BoosterTestCase):
             response, body = self.booster.request(params)
             self.assertTrue(response.status in (200,404))
 
-    def test_basic_user_creation_results_in_201(self):
+    def test_basic_create_user_results_in_201(self):
         """ A successful user creation should result in 201 """
         params = self.params
         params.update(self.user1)   # merge in user1 data
@@ -44,7 +44,7 @@ class TestUserCreate(boostertest.BoosterTestCase):
         self.assertEqual(response.status, 201)
         self.assertEqual(err, "none")
 
-    def test_user_creation_with_multiple_roles_succeeds(self):
+    def test_create_user_with_multiple_roles_succeeds(self):
         """ A user creation with multiple roles should succeed """
         params = self.params
         params.update(self.user1)   # merge in user1 data
@@ -55,7 +55,7 @@ class TestUserCreate(boostertest.BoosterTestCase):
         self.assertEqual(response.status, 201)
         self.assertEqual(err, "none")
 
-    def test_user_creation_with_multiple_permission_succeeds(self):
+    def test_create_user_with_multiple_permission_succeeds(self):
         """ A user creation with multiple permission pairs should succeed """
         params = self.params
         params.update(self.user1)   # merge in user1 data
@@ -66,7 +66,7 @@ class TestUserCreate(boostertest.BoosterTestCase):
         self.assertEqual(response.status, 201)
         self.assertEqual(err, "none")
 
-    def test_user_creation_with_multiple_collections_succeeds(self):
+    def test_create_user_with_multiple_collections_succeeds(self):
         """ A user creation with multiple collections should succeed """
         params = self.params
         params.update(self.user1)   # merge in user1 data
@@ -77,25 +77,26 @@ class TestUserCreate(boostertest.BoosterTestCase):
         self.assertEqual(response.status, 201)
         self.assertEqual(err, "none")
 
-    def test_no_user_name_results_in_400(self):
-        """ A non-existent user-name value should result in 400 """
+    def test_create_user_with_no_user_name_results_in_400(self):
+        """ A user-create with missing user-name should result in 400 """
         response, body = self.booster.request(self.params)
         err = response.get("x-booster-error", "")
         self.assertEqual(response.status, 400)
         self.assertTrue(err.find("valid set of arguments was not provided") != 1)
 
-    @boostertest.skiptest
-    def test_empty_user_name_results_in_400(self):
-        """ An empty user-name value should result in 400 """
-        #self.booster.debuglevel = 1
-        self.params['user-name'] = ""
-        response, body = self.booster.request(self.params)
-        err = response.get("x-booster-error", "")
-        self.assertEqual(response.status, 400)
-        #self.assertTrue(err.find("") != 1)
+    def test_create_user_with_empty_user_name_results_in_500(self):
+        """ A user-create with empty user-name value should result in 500 """
+        params = self.params
+        params.update(self.user1)   # merge in user1 data
+        params['user-name'] = ""
+        response, body = self.booster.request(params)
+        err = response.get("x-booster-error", "none")
+        self.assertEqual(response.status, 500)
+        self.assertTrue(err.find("Error running action 'user-create'") != -1) 
+        self.assertTrue(err.find("Error: Invalid lexical value") != -1) 
 
     def test_create_user_with_invalid_name_results_in_500(self):
-        """ Invalid user names should be rejected by api and result in 500 """
+        """ A user-create with invalid user-name should be rejected by api and result in 500 """
         params = self.params
         params.update(self.user1)   # merge in user1 data
         badnames = ("hows##", "fli$%")

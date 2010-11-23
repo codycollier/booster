@@ -49,25 +49,25 @@ class TestGroupCreate(boostertest.BoosterTestCase):
         self.assertEqual(response.status, 409)
         self.assertTrue(err.find("already exists") != -1)
 
-    def test_no_group_name_results_in_400(self):
+    def test_create_group_with_no_group_name_results_in_400(self):
         """ A non-existent group-name value should result in 400 """
         response, body = self.booster.request(self.params)
         err = response.get("x-booster-error", "")
         self.assertEqual(response.status, 400)
         self.assertTrue(err.find("valid set of arguments was not provided") != 1)
 
-    @boostertest.skiptest
-    def test_empty_group_name_results_in_400(self):
-        """ An empty group-name value should result in 400 """
-        #self.booster.debuglevel = 1
-        self.params['group-name'] = ""
-        response, body = self.booster.request(self.params)
-        err = response.get("x-booster-error", "")
-        self.assertEqual(response.status, 400)
-        #self.assertTrue(err.find("") != 1)
+    def test_create_group_with_empty_group_name_results_in_500(self):
+        """ A group-create with empty group-name value should result in 500 """
+        params = self.params
+        params['group-name'] = ""
+        response, body = self.booster.request(params)
+        err = response.get("x-booster-error", "none")
+        self.assertEqual(response.status, 500)
+        self.assertTrue(err.find("Error running action 'group-create'") != -1)
+        self.assertTrue(err.find("Error: Invalid lexical value") != -1)
 
     def test_create_group_with_invalid_name_results_in_500(self):
-        """ Invalid group names should be rejected by api and result in 500 """
+        """ A group-create with invalid group-name should be rejected by api and result in 500 """
         badnames = ("%%zxcggg", "$fbbhhjh$")
         for badname in badnames:
             params = self.params
