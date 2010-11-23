@@ -1,0 +1,92 @@
+-------------------------------------------------------------------------------
+functional tests for booster
+-------------------------------------------------------------------------------
+
+These are the functional tests for booster.  They are used during development 
+and should NOT be run against a production installation.  To run the tests, the 
+following items are required:
+
+* a working installation of MarkLogic Server 4.2+
+* an installation of booster.xqy in the admin app server
+* python 2.4+ to run the tests
+* httplib2 to run the tests
+* correctly set environment variables
+
+
+----------------------------------------------------
+running the tests
+----------------------------------------------------
+The following instructions are for running the tests from a linux host 
+against a remote instance of MarkLogic server also running on linux.
+
+--------------------------------
+1. Install booster.xqy
+--------------------------------
+The tests expect the xquery file (booster.xqy) to reside in the default 
+admin app server root.  Here's a common method for copying the file to the 
+appropriate location:
+
+[user@host test]$scp ../booster.xqy root@your-server:/opt/MarkLogic/Admin/
+booster.xqy             100%   14KB  14.2KB/s   00:00    
+
+--------------------------------
+2. Set environment variables
+--------------------------------
+Environment variables are used to configure the tests with the information 
+needed to connect to the MarkLogic Server instance.  Here's one example of 
+how you can set those variables:
+
+[user@host test]$export BOOSTER_HOST="your-server"
+[user@host test]$export BOOSTER_PORT="8001"
+[user@host test]$export BOOSTER_USER="some-admin-user"
+[user@host test]$export BOOSTER_PASS="somepass"
+
+--------------------------------
+3. Test your environment
+--------------------------------
+There is a basic test module that can be run to test the environment.  An edited
+version of the test output is shown below.  The test should succeed and return
+an "OK".
+
+[user@host test]$./test_environment.py 
+connect: (your-server, 8001)
+send: 'GET /booster.xqy HTTP/1.1\r\nHost: your-server:8001\r\naccept-encoding: gzip, deflate\r\nuser-agent: booster test\r\n\r\n'
+--snip output--
+header: Connection: close
+.
+----------------------------------------------------------------------
+Ran 1 test in 1.052s
+
+OK
+
+
+--------------------------------
+4. Run all tests
+--------------------------------
+A convenience script is available, which will run all the tests in a randomized 
+order. Once your test environment is confirmed, you can run the script and you 
+should see output similar to this example:
+
+[user@host test]$./run-all-tests.py 
+Invalid group names should be rejected by api and result in 500 ... ok
+A non-existent group-name value should result in 400 ... ok
+Attempting to create a pre-existing group should result in 409 ... ok
+A successful group creation should result in a 201 ... ok
+Invalid action values should result in a 400 ... ok
+A call with no querystring or form parameters should result in 400 ... ok
+An empty value for action should result in 400 ... ok
+A user creation with multiple permission pairs should succeed ... ok
+A user creation with multiple collections should succeed ... ok
+A user creation with multiple roles should succeed ... ok
+A non-existent user-name value should result in 400 ... ok
+Invalid user names should be rejected by api and result in 500 ... ok
+A successful user creation should result in 201 ... ok
+
+----------------------------------------------------------------------
+Ran 13 tests in 29.543s
+
+OK
+
+
+
+
