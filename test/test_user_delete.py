@@ -6,14 +6,14 @@ import unittest
 import boostertest
 
 
-class TestUserDelete(boostertest.BoosterTestCase):
-    """ Test the user-delete action
+class TestGroupDelete(boostertest.BoosterTestCase):
+    """ Test the group-delete action
     """
 
     def setUp(self):
         """ Set the action and other commonly used fixture data """
         self.params = {}
-        self.params['action'] = "user-delete"
+        self.params['action'] = "group-delete"
         # sample user
         self.user1 = {}
         self.user1['user-name'] = "samuel35"
@@ -62,6 +62,7 @@ class TestUserDelete(boostertest.BoosterTestCase):
         self.assertEqual(response.status, 400)
         self.assertTrue(err.find("valid set of arguments was not provided") != 1)
 
+    @boostertest.skiptest
     def test_empty_user_name_results_in_500(self):
         """ A user-delete with empty user-name value should result in 500 """
         params = self.params
