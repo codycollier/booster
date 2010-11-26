@@ -34,10 +34,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-__author__ = "Cody Collier (cody@telnet.org)"
-__copyright__ = "Copyright 2010 Cody Collier"
-__license__ = "Apache License Version 2.0"
-
 
 import httplib2
 import os
