@@ -7,11 +7,14 @@ the http response, in a single line.
 
 Example test case and booster call >
 
-    class TestSomeAction(boostertest.BoosterTestCase):
+    class TestGroupCreate(boostertest.BoosterTestCase):
 
-        def test_group_create(self):
-            response, body = self.booster.request("group-create", {"group-name":"test1"})
-            self.assertEqual(response.code, 200)
+        def test_basic_group_create_results_in_201(self):
+            params = {}
+            params['action'] = "group-create"
+            params['group-name'] = "somegroup"
+            response, body = self.booster.request(params)
+            self.assertEqual(response.status, 200)
 
 
 See the functional test modules for more examples.
