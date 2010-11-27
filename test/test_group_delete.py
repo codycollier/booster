@@ -13,6 +13,7 @@ class TestGroupDelete(boostertest.BoosterTestCase):
         """ Set the action and other commonly used fixture data """
         self.params = {}
         self.params['action'] = "group-delete"
+        self.params['group-name'] = "any-old-group"
         # collect group names for later teardown
         self.teardown_groups = []
 
@@ -43,9 +44,20 @@ class TestGroupDelete(boostertest.BoosterTestCase):
         self.assertEqual(response.status, 200)
         self.assertEqual(err, "none")
 
+    def test_delete_nonexistent_group_results_in_404(self):
+        """ Attempting to delete a non-existent group should return 404 """
+        params = self.params
+        params['group-name'] = "no-such-group-here"
+        response, body = self.booster.request(params)
+        err = response.get("x-booster-error", "")
+        self.assertEqual(response.status, 404)
+        self.assertTrue(err.find("does not exist") != 1)
+
     def test_delete_group_with_no_group_name_results_in_400(self):
         """ A group-delete with missing group-name should result in 400 """
-        response, body = self.booster.request(self.params)
+        params = self.params
+        del params['group-name']
+        response, body = self.booster.request(params)
         err = response.get("x-booster-error", "")
         self.assertEqual(response.status, 400)
         self.assertTrue(err.find("valid set of arguments was not provided") != 1)

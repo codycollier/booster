@@ -6,14 +6,15 @@ import unittest
 import boostertest
 
 
-class TestGroupDelete(boostertest.BoosterTestCase):
-    """ Test the group-delete action
+class TestUserDelete(boostertest.BoosterTestCase):
+    """ Test the user-delete action
     """
 
     def setUp(self):
         """ Set the action and other commonly used fixture data """
         self.params = {}
-        self.params['action'] = "group-delete"
+        self.params['action'] = "user-delete"
+        self.params['user-name'] = "justauser"
         # sample user
         self.user1 = {}
         self.user1['user-name'] = "samuel35"
@@ -55,9 +56,20 @@ class TestGroupDelete(boostertest.BoosterTestCase):
         self.assertEqual(response.status, 200)
         self.assertEqual(err, "none")
 
+    def test_delete_nonexistent_user_results_in_404(self):
+        """ Attempting to delete a non-existent user should return 404 """
+        params = self.params
+        params['user-name'] = "no-such-user-is-here-on-server-go-away"
+        response, body = self.booster.request(params)
+        err = response.get("x-booster-error", "")
+        self.assertEqual(response.status, 404)
+        self.assertTrue(err.find("does not exist") != 1)
+
     def test_delete_user_with_no_user_name_results_in_400(self):
         """ A user-delete with missing user-name should result in 400 """
-        response, body = self.booster.request(self.params)
+        params = self.params
+        del params['user-name']
+        response, body = self.booster.request(params)
         err = response.get("x-booster-error", "")
         self.assertEqual(response.status, 400)
         self.assertTrue(err.find("valid set of arguments was not provided") != 1)

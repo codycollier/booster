@@ -68,6 +68,33 @@ declare variable $CONFIG:=
         <param name="debug" />
         <param name="action">
             <valid-options>
+                <option value="appserver-delete"> 
+                    <required>appserver-name</required>
+                    <required>group-name</required>
+                </option>
+                <option value="appserver-create-http"> 
+                    <required>appserver-name</required>
+                    <required>group-name</required>
+                    <required>root</required>
+                    <required>port</required>
+                    <required>modules-name</required>
+                    <required>database-name</required>
+                </option>
+                <option value="appserver-create-webdav"> 
+                    <required>appserver-name</required>
+                    <required>group-name</required>
+                    <required>root</required>
+                    <required>port</required>
+                    <required>database-name</required>
+                </option>
+                <option value="appserver-create-xdbc"> 
+                    <required>appserver-name</required>
+                    <required>group-name</required>
+                    <required>root</required>
+                    <required>port</required>
+                    <required>modules-name</required>
+                    <required>database-name</required>
+                </option>
                 <option value="get-group-names" />
                 <option value="group-create"> 
                     <required>group-name</required>
@@ -99,9 +126,146 @@ declare variable $CONFIG:=
 (:---------- appservers ------------------------------------------------------:)
 
 (:~
+ : Create an http app server
+ :   wraps: admin:http-server-create
  : 
- :
+ : @param $appserver-name The name of the appserver to be created
+ : @param $database-name The name of the documents db for the appserver
+ : @param $group-name The name of the group where the appserver should live
+ : @param $modules-name The name of the modules db for the appserver
+ : @param $port The port on which the appserver will listen
+ : @param $root The root path for the appserver
+ : @return Returns status 201 on success and 409 if appserver already exists
+ :)
+declare function local:appserver-create-http($appserver-name as xs:string,
+                    $database-name as xs:string, $group-name as xs:string,
+                    $modules-name as xs:string, $port as xs:string,
+                    $root as xs:string)
 
+as empty-sequence()
+{
+    let $config := admin:get-configuration()
+    let $group-id := admin:group-get-id($config, $group-name)
+    return 
+        if (admin:appserver-exists($config, $group-id, $appserver-name)) then (
+            xdmp:set-response-code(409, "Conflict"),
+            xdmp:add-response-header("x-booster-error", 
+                fn:concat("App server '", $appserver-name, "' already exists")))
+        else (
+            let $database-id := xdmp:database($database-name)
+            let $modules-id := if ($modules-name eq "file-system") 
+                                then "file-system" 
+                                else xdmp:database($modules-name)
+            let $_port := $port cast as xs:unsignedLong 
+            let $new-config := admin:http-server-create($config, $group-id, 
+                                $appserver-name, $root, $_port, $modules-id, 
+                                $database-id)
+            return
+                admin:save-configuration($new-config),
+                xdmp:set-response-code(201, "Created"))
+};
+
+(:~
+ : Create an xdbc app server
+ :   wraps: admin:xdbc-server-create
+ : 
+ : @param $appserver-name The name of the appserver to be created
+ : @param $database-name The name of the documents db for the appserver
+ : @param $group-name The name of the group where the appserver should live
+ : @param $modules-name The name of the modules db for the appserver
+ : @param $port The port on which the appserver will listen
+ : @param $root The root path for the appserver
+ : @return Returns status 201 on success and 409 if appserver already exists
+ :)
+declare function local:appserver-create-xdbc($appserver-name as xs:string,
+                    $database-name as xs:string, $group-name as xs:string,
+                    $modules-name as xs:string, $port as xs:string,
+                    $root as xs:string)
+
+as empty-sequence()
+{
+    let $config := admin:get-configuration()
+    let $group-id := admin:group-get-id($config, $group-name)
+    return 
+        if (admin:appserver-exists($config, $group-id, $appserver-name)) then (
+            xdmp:set-response-code(409, "Conflict"),
+            xdmp:add-response-header("x-booster-error", 
+                fn:concat("App server '", $appserver-name, "' already exists")))
+        else (
+            let $database-id := xdmp:database($database-name)
+            let $modules-id := if ($modules-name eq "file-system") 
+                                then "file-system" 
+                                else xdmp:database($modules-name)
+            let $_port := $port cast as xs:unsignedLong 
+            let $new-config := admin:xdbc-server-create($config, $group-id, 
+                                $appserver-name, $root, $_port, $modules-id, 
+                                $database-id)
+            return
+                admin:save-configuration($new-config),
+                xdmp:set-response-code(201, "Created"))
+};
+
+(:~
+ : Create a webdav app server
+ :   wraps: admin:webdav-server-create
+ : 
+ : @param $appserver-name The name of the appserver to be created
+ : @param $database-name The name of the documents db for the appserver
+ : @param $group-name The name of the group where the appserver should live
+ : @param $port The port on which the appserver will listen
+ : @param $root The root path for the appserver
+ : @return Returns status 201 on success and 409 if appserver already exists
+ :)
+declare function local:appserver-create-webdav($appserver-name as xs:string,
+                    $database-name as xs:string, $group-name as xs:string,
+                    $port as xs:string, $root as xs:string)
+
+as empty-sequence()
+{
+    let $config := admin:get-configuration()
+    let $group-id := admin:group-get-id($config, $group-name)
+    return 
+        if (admin:appserver-exists($config, $group-id, $appserver-name)) then (
+            xdmp:set-response-code(409, "Conflict"),
+            xdmp:add-response-header("x-booster-error", 
+                fn:concat("App server '", $appserver-name, "' already exists")))
+        else (
+            let $database-id := xdmp:database($database-name)
+            let $_port := $port cast as xs:unsignedLong 
+            let $new-config := admin:webdav-server-create($config, $group-id, 
+                                $appserver-name, $root, $_port, $database-id)
+            return
+                admin:save-configuration($new-config),
+                xdmp:set-response-code(201, "Created"))
+};
+
+(:~
+ : Delete an app server from a group by name
+ :
+ : @param $appserver-name The name of an app server
+ : @param $group-name The name of the group in which the appserver resides
+ : @return Returns status 200 on success and 404 if appserver does not exist
+ :)
+declare function local:appserver-delete($appserver-name as xs:string, 
+                    $group-name as xs:string) 
+as empty-sequence()
+{
+    let $config := admin:get-configuration()
+    let $group-id := admin:group-get-id($config, $group-name)
+    return 
+        if (fn:not(admin:appserver-exists($config, $group-id, $appserver-name)))
+        then (
+            xdmp:set-response-code(404, "Not Found"),
+            xdmp:add-response-header("x-booster-error", 
+                fn:concat("Appserver '", $appserver-name, "' does not exist")))
+        else (
+            let $appserver-id := admin:appserver-get-id($config, $group-id, 
+                                                            $appserver-name)
+            let $new-config := admin:appserver-delete($config, $appserver-id)
+            return
+                admin:save-configuration($new-config),
+                xdmp:set-response-code(200, "OK"))
+};
 
 
 (:---------- databases -------------------------------------------------------:)
@@ -112,7 +276,6 @@ declare variable $CONFIG:=
 (:~
  : Retrieve list of group names from the configuration
  : 
- : @param none none
  : @return sequence of group names
  :)
 declare function local:get-group-names() as xs:string*
@@ -165,8 +328,6 @@ declare function local:group-delete($group-name as xs:string) as empty-sequence(
                                         admin:group-get-id($config, $group-name))),
             xdmp:set-response-code(200, "OK"))
 };
-
-
 
 
 (:---------- hosts -----------------------------------------------------------:)
@@ -327,9 +488,14 @@ declare function local:action-handler() as item()*
                 xdmp:apply($action-function)
             else if ($arg-count eq 1) then
                 xdmp:apply($action-function, $arg-values[1])
+            else if ($arg-count eq 2) then
+                xdmp:apply($action-function, $arg-values[1], $arg-values[2])
             else if ($arg-count eq 3) then
                 xdmp:apply($action-function, $arg-values[1], $arg-values[2],
                             $arg-values[3])
+            else if ($arg-count eq 5) then
+                xdmp:apply($action-function, $arg-values[1], $arg-values[2],
+                            $arg-values[3], $arg-values[4], $arg-values[5])
             else if ($arg-count eq 6) then
                 xdmp:apply($action-function, $arg-values[1], $arg-values[2],
                             $arg-values[3], $arg-values[4], $arg-values[5],
