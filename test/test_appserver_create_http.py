@@ -88,6 +88,10 @@ class TestAppserverCreateHTTP(boostertest.BoosterTestCase):
             self.assertTrue(err.find("Error running action 'appserver-create-http'") != -1)
             self.assertTrue(err.find("Error: Invalid lexical value") != -1)
 
+    # loop these on all parameters
+    #def test_create_http_appserver_with_empty_parameter_results_in_500(self):
+    #def test_create_http_appserver_with_missing_parameter_results_in_500(self):
+
 
 if __name__=="__main__":
 

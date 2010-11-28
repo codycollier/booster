@@ -110,6 +110,22 @@ class TestUserCreate(boostertest.BoosterTestCase):
             self.assertTrue(err.find("Error running action 'user-create'") != -1)
             self.assertTrue(err.find("Error: Invalid lexical value") != -1)
 
+    #def test_create_user_with_no_password_results_in_400(self):
+    #def test_create_user_with_empty_password_results_in_500(self):
+    #def test_create_user_with_invalid_password_results_in_500(self):
+    #def test_create_user_with_no_description_results_in_400(self):
+    #def test_create_user_with_empty_description_results_in_201(self):
+    #def test_create_user_with_invalid_description_results_in_500(self):
+    #def test_create_user_with_no_role_names_results_in_400(self):
+    #def test_create_user_with_empty_role_names_results_in_201(self):
+    #def test_create_user_with_invalid_role_names_results_in_500(self):
+    #def test_create_user_with_no_permissions_results_in_400(self):
+    #def test_create_user_with_empty_permissions_results_in_201(self):
+    #def test_create_user_with_invalid_permissions_results_in_500(self):
+    #def test_create_user_with_no_collections_results_in_400(self):
+    #def test_create_user_with_empty_collections_results_in_201(self):
+    #def test_create_user_with_invalid_collections_results_in_500(self):
+
 
 
 if __name__=="__main__":
