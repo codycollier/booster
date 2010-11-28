@@ -44,6 +44,9 @@ xquery version "1.0-ml";
   : can be added upon request.  Also, users should refer to the formal MarkLogic
   : documentation for more specific details on method parameters as needed. 
   :
+  : Developers:  Note that all parameters in action function definitions must 
+  : be listed in alphabetical order.
+  :
   : @see http://developer.marklogic.com/
   : @see http://developer.marklogic.com/pubs/4.2/apidocs/All.html
   : @see http://www.xqueryfunctions.com/
@@ -95,7 +98,24 @@ declare variable $CONFIG:=
                     <required>modules-name</required>
                     <required>database-name</required>
                 </option>
-                <option value="get-group-names" />
+                <option value="database-create"> 
+                    <required>database-name</required>
+                    <required>security-db-name</required>
+                    <required>schema-db-name</required>
+                </option>
+                <option value="database-delete">
+                  <required>forest-name</required>
+                </option>
+                <option value="forest-create"> 
+                    <required>forest-name</required>
+                    <required>host-name</required>
+                    <required>data-directory</required>
+                </option>
+                <option value="forest-delete">
+                  <required>forest-name</required>
+                  <required>delete-data</required>
+                </option>
+                <option value="group-names-retrieve" />
                 <option value="group-create"> 
                     <required>group-name</required>
                 </option>
@@ -241,6 +261,7 @@ as empty-sequence()
 
 (:~
  : Delete an app server from a group by name
+ :   wraps: admin:appserver-delete
  :
  : @param $appserver-name The name of an app server
  : @param $group-name The name of the group in which the appserver resides
@@ -269,7 +290,72 @@ as empty-sequence()
 
 
 (:---------- databases -------------------------------------------------------:)
+
 (:---------- forests ---------------------------------------------------------:)
+
+(:~
+ : Create a forest with the given name 
+ :      wraps: admin:forest-create
+ : 
+ : @param $forest-name The name of the forest to be created
+ : @param $host-name The host name where the forest will be hosted or "localhost"
+ : @param $data-directory  The path for the forest or "private"
+ : @return Returns status 201 on success, 409 if forest exists, 404 if host does not exist
+ :)
+declare function local:forest-create($data-directory as xs:string,
+                    $forest-name as xs:string, $host-name as xs:string) 
+as empty-sequence()
+{
+    let $config := admin:get-configuration()
+    return 
+        if (admin:forest-exists($config, $forest-name)) then (
+            xdmp:set-response-code(409, "Conflict"),
+            xdmp:add-response-header("x-booster-error", 
+                    fn:concat("Forest '", $forest-name, "' already exists")))
+        else (
+            let $host-id := if ($host-name eq "localhost") 
+                            then (xdmp:host())
+                            else (xdmp:host($host-name))
+            let $_data-directory := if ($data-directory eq "private") 
+                                        then (())
+                                        else ($data-directory)
+            let $new-config := admin:forest-create($config, $forest-name, 
+                                                    $host-id, $_data-directory)
+            return 
+                admin:save-configuration($new-config),
+                xdmp:set-response-code(201, "Created"))
+};
+
+(:~
+ : Delete a forest with the given name 
+ :      wraps: admin:forest-delete
+ : 
+ : @param $forest-name The name of the forest to be created
+ : @param $delete-data An indicator "true" or "false" of whether to delete data
+ : @return Returns status 200 on success and 404 if forest does not exist
+ :)
+declare function local:forest-delete($delete-data as xs:string,
+                    $forest-name as xs:string)
+as empty-sequence()
+{
+    let $config := admin:get-configuration()
+    return
+        if (fn:not(admin:forest-exists($config, $forest-name))) then (
+            xdmp:set-response-code(404, "Not Found"),
+            xdmp:add-response-header("x-booster-error",
+                fn:concat("Forest '", $forest-name, "' does not exist")))
+        else (
+            let $forest-id := admin:forest-get-id($config, $forest-name)
+            let $_delete-data := if ($delete-data eq "true")
+                                    then (fn:true())
+                                    else (fn:false())
+            let $new-config := admin:forest-delete($config, $forest-id, 
+                                                        $_delete-data)
+            return
+                admin:save-configuration($new-config),
+                xdmp:set-response-code(200, "OK"))
+
+};
 
 (:---------- groups ----------------------------------------------------------:)
 
@@ -278,7 +364,7 @@ as empty-sequence()
  : 
  : @return sequence of group names
  :)
-declare function local:get-group-names() as xs:string*
+declare function local:group-names-retrieve() as xs:string*
 {
     let $config := admin:get-configuration()
     let $group-names := for $grid in admin:get-group-ids($config)

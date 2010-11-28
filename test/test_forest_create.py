@@ -13,8 +13,8 @@ class TestForestCreate(boostertest.BoosterTestCase):
         """ Set the action and other commonly used fixture data """
         self.params = {}
         self.params['action'] = "forest-create"
-        self.params['forest-name'] = "docs-forest-a"
-        self.params['host-name'] = "somehost"
+        self.params['forest-name'] = "roosevelt"
+        self.params['host-name'] = "localhost"
         self.params['data-directory'] = "private"
         # collect app server names for later teardown
         self.teardown_forests = []
@@ -23,6 +23,7 @@ class TestForestCreate(boostertest.BoosterTestCase):
         """ Remove items from server created during tests """
         params = {}
         params['action'] = "forest-delete"
+        params['delete-data'] = "true"
         for forest in self.teardown_forests:
             params['forest-name'] = forest 
             response, body = self.booster.request(params)
@@ -69,7 +70,7 @@ class TestForestCreate(boostertest.BoosterTestCase):
         err = response.get("x-booster-error", "none")
         self.assertEqual(response.status, 500)
         self.assertTrue(err.find("Error running action 'forest-create'") != -1)
-        self.assertTrue(err.find("Error: Invalid lexical value") != -1)
+        self.assertTrue(err.find("Error: Invalid configuration") != -1)
 
     def test_create_forest_with_invalid_name_results_in_500(self):
         """ An forest-create with invalid forest-name should be rejected by api and result in 500 """
@@ -82,9 +83,19 @@ class TestForestCreate(boostertest.BoosterTestCase):
             err = response.get("x-booster-error", "none")
             self.assertEqual(response.status, 500)
             self.assertTrue(err.find("Error running action 'forest-create'") != -1)
-            self.assertTrue(err.find("Error: Invalid lexical value") != -1)
+            self.assertTrue(err.find("Error: Invalid configuration") != -1)
 
-    #def test_create_forest_with_public_data_directory(self):
+    def test_create_forest_with_public_data_directory(self):
+        """ A forest creation with public data-directory should result in a 201 """
+        params = self.params
+        params['data-directory'] = "/tmp"
+        params['forest-name'] = "lincoln"
+        self.teardown_forests.append("lincoln")
+        response, body = self.booster.request(params)
+        err = response.get("x-booster-error", "none")
+        self.assertEqual(response.status, 201)
+        self.assertEqual(err, "none")
+
     #def test_create_forest_with_no_host_name_results_in_400(self):
     #def test_create_forest_with_empty_host_name_results_in_500(self):
     #def test_create_forest_with_invalid_host_name_results_in_500(self):

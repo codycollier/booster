@@ -69,7 +69,7 @@ class TestDatabaseCreate(boostertest.BoosterTestCase):
         err = response.get("x-booster-error", "none")
         self.assertEqual(response.status, 500)
         self.assertTrue(err.find("Error running action 'database-create'") != -1)
-        self.assertTrue(err.find("Error: Invalid lexical value") != -1)
+        self.assertTrue(err.find("Error: Invalid configuration") != -1)
 
     def test_create_database_with_invalid_name_results_in_500(self):
         """ An database-create with invalid database-name should be rejected by api and result in 500 """
@@ -82,7 +82,7 @@ class TestDatabaseCreate(boostertest.BoosterTestCase):
             err = response.get("x-booster-error", "none")
             self.assertEqual(response.status, 500)
             self.assertTrue(err.find("Error running action 'database-create'") != -1)
-            self.assertTrue(err.find("Error: Invalid lexical value") != -1)
+            self.assertTrue(err.find("Error: Invalid configuration") != -1)
 
     #def test_create_database_with_no_security_db_name_results_in_400(self):
     #def test_create_database_with_empty_security_db_name_results_in_500(self):

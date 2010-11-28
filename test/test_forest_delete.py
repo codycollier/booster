@@ -14,6 +14,7 @@ class TestForestDelete(boostertest.BoosterTestCase):
         self.params = {}
         self.params['action'] = "forest-delete"
         self.params['forest-name'] = "pinecone-a"
+        self.params['delete-data'] = "true"
         # collect forest names for later teardown
         self.teardown_forests = []
 
@@ -21,6 +22,7 @@ class TestForestDelete(boostertest.BoosterTestCase):
         """ Remove items from server created during tests """
         params = {}
         params['action'] = "forest-delete"
+        params['delete-data'] = "true"
         for forest in self.teardown_forests:
             params['forest-name'] = forest
             response, body = self.booster.request(params)
