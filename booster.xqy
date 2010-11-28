@@ -104,7 +104,7 @@ declare variable $CONFIG:=
                     <required>schema-db-name</required>
                 </option>
                 <option value="database-delete">
-                  <required>forest-name</required>
+                  <required>database-name</required>
                 </option>
                 <option value="forest-create"> 
                     <required>forest-name</required>
@@ -291,15 +291,66 @@ as empty-sequence()
 
 (:---------- databases -------------------------------------------------------:)
 
+(:~
+ : Create a database with the given name 
+ :      wraps: admin:database-create
+ : 
+ : @param $database-name The name of the database to be created
+ : @param $schema-db-name The name of the Schemas database for the new db
+ : @param $security-db-name The name of the Security database for the new db
+ : @return Returns status 201 on success, 409 if forest exists, 404 if host does not exist
+ :)
+declare function local:database-create($database-name as xs:string,
+                    $schema-db-name as xs:string, $security-db-name as xs:string) 
+as empty-sequence()
+{
+    let $config := admin:get-configuration()
+    return 
+        if (admin:database-exists($config, $database-name)) then (
+            xdmp:set-response-code(409, "Conflict"),
+            xdmp:add-response-header("x-booster-error", 
+                    fn:concat("Database '", $database-name, "' already exists")))
+        else (
+            let $security-db-id := xdmp:database($security-db-name)
+            let $schema-db-id := xdmp:database($schema-db-name)
+            let $new-config := admin:database-create($config, $database-name, 
+                                                    $security-db-id, $schema-db-id)
+            return 
+                admin:save-configuration($new-config),
+                xdmp:set-response-code(201, "Created"))
+};
+
+(:~
+ : Delete the database with the given name 
+ :      wraps: admin:database-delete
+ : 
+ : @param $database-name The name of the database to be deleted
+ : @return Returns status 200 on success and 404 if forest does not exist
+ :)
+declare function local:database-delete($database-name as xs:string)
+as empty-sequence()
+{
+    let $config := admin:get-configuration()
+    return
+        if (fn:not(admin:database-exists($config, $database-name))) then (
+            xdmp:set-response-code(404, "Not Found"),
+            xdmp:add-response-header("x-booster-error",
+                fn:concat("Database '", $database-name, "' does not exist")))
+        else (
+            admin:save-configuration(admin:database-delete($config, 
+                                            xdmp:database($database-name))),
+            xdmp:set-response-code(200, "OK"))
+};
+
 (:---------- forests ---------------------------------------------------------:)
 
 (:~
  : Create a forest with the given name 
  :      wraps: admin:forest-create
  : 
+ : @param $data-directory  The path for the forest or "private"
  : @param $forest-name The name of the forest to be created
  : @param $host-name The host name where the forest will be hosted or "localhost"
- : @param $data-directory  The path for the forest or "private"
  : @return Returns status 201 on success, 409 if forest exists, 404 if host does not exist
  :)
 declare function local:forest-create($data-directory as xs:string,
@@ -327,11 +378,11 @@ as empty-sequence()
 };
 
 (:~
- : Delete a forest with the given name 
+ : Delete the forest with the given name 
  :      wraps: admin:forest-delete
  : 
- : @param $forest-name The name of the forest to be created
  : @param $delete-data An indicator "true" or "false" of whether to delete data
+ : @param $forest-name The name of the forest to be deleted
  : @return Returns status 200 on success and 404 if forest does not exist
  :)
 declare function local:forest-delete($delete-data as xs:string,
@@ -354,7 +405,6 @@ as empty-sequence()
             return
                 admin:save-configuration($new-config),
                 xdmp:set-response-code(200, "OK"))
-
 };
 
 (:---------- groups ----------------------------------------------------------:)
@@ -610,8 +660,7 @@ try {
         local:action-handler()
     } catch ($err) {
         xdmp:set-response-code(400, "Bad Request"),
-        xdmp:add-response-header("x-booster-error", $err/error:message/text()),
-        $err
+        xdmp:add-response-header("x-booster-error", $err/error:message/text())
     }
 } catch ($err) { 
     xdmp:set-response-code(403, "Forbidden"),
