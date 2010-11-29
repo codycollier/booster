@@ -131,8 +131,36 @@ declare variable $CONFIG:=
                     <required>setting</required>
                     <required>value</required>
                     <allowed-settings>
-                        <setting cast="xs:unsignedInt">list-cache-size</setting>
+                        <setting cast="xs:boolean">audit-enabled</setting>
+                        <setting cast="xs:string">audit-outcome-restriction</setting>
+                        <setting cast="xs:unsignedInt">compressed-tree-cache-partitions</setting>
                         <setting cast="xs:unsignedInt">compressed-tree-cache-size</setting>
+                        <setting cast="xs:unsignedInt">compressed-tree-read-size</setting>
+                        <setting cast="xs:unsignedInt">expanded-tree-cache-partitions</setting>
+                        <setting cast="xs:unsignedInt">expanded-tree-cache-size</setting>
+                        <setting cast="xs:boolean">failover-enable</setting>
+                        <setting cast="xs:string">file-log-level</setting>
+                        <setting cast="xs:unsignedInt">host-initial-timeout</setting>
+                        <setting cast="xs:unsignedInt">host-timeout</setting>
+                        <setting cast="xs:unsignedInt">http-timeout</setting>
+                        <setting cast="xs:string">http-user-agent</setting>
+                        <setting cast="xs:unsignedInt">keep-audit-files</setting>
+                        <setting cast="xs:unsignedInt">keep-log-files</setting>
+                        <setting cast="xs:unsignedInt">list-cache-partitions</setting>
+                        <setting cast="xs:unsignedInt">list-cache-size</setting>
+                        <setting cast="xs:string">name</setting>
+                        <setting cast="xs:unsignedInt">retry-timeout</setting>
+                        <setting cast="xs:string">rotate-audit-files</setting>
+                        <setting cast="xs:string">rotate-log-files</setting>
+                        <setting cast="xs:string">smtp-relay</setting>
+                        <setting cast="xs:unsignedInt">smtp-timeout</setting>
+                        <setting cast="xs:string">system-log-level</setting>
+                        <setting cast="xs:boolean">trace-events-activated</setting>
+                        <setting cast="xs:boolean">xdqp-ssl-allow-sslv3</setting>
+                        <setting cast="xs:boolean">xdqp-ssl-allow-tls</setting>
+                        <setting cast="xs:string">xdqp-ssl-ciphers</setting>
+                        <setting cast="xs:boolean">xdqp-ssl-enabled</setting>
+                        <setting cast="xs:unsignedInt">xdqp-timeout</setting>
                     </allowed-settings>
                 </option>
                 <option value="user-create">
