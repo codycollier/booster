@@ -126,6 +126,15 @@ declare variable $CONFIG:=
                     <required>group-name</required>
                     <required>value</required>
                 </option>
+                <option value="group-set">
+                    <required>group-name</required>
+                    <required>setting</required>
+                    <required>value</required>
+                    <allowed-settings>
+                        <setting cast="xs:unsignedInt">list-cache-size</setting>
+                        <setting cast="xs:unsignedInt">compressed-tree-cache-size</setting>
+                    </allowed-settings>
+                </option>
                 <option value="user-create">
                     <required>user-name</required>
                     <required>description</required>
@@ -467,15 +476,21 @@ declare function local:group-delete($group-name as xs:string) as empty-sequence(
 };
 
 (:~
- : Set a group's list cache size
- :   wraps: admin:group-set-list-cache-size
+ : Update a given group setting with the given value
+ :   wraps: admin:group-set-*
  : 
- : @param $group-name The name of the group
- : @param $value The value to set for the list cache size
- : @return Returns status 200 on success and 404 if group does not exist
+ : This function will accept a setting and a value to set for a group.  It will 
+ : confirm the setting name exists in the config xml and it will case the 
+ : value as the type specified in the config xml.  The relevant admin method 
+ : call will then be dynamically generated and applied.
+ : 
+ : @param $group-name The name of the group to edit
+ : @param $setting The name of the setting to be changed
+ : @param $value The value to apply to the setting
+ : @return Returns 200 on success or 404 if group or setting does not exist
  :)
-declare function local:group-set-list-cache-size($group-name as xs:string, 
-                                                    $value as xs:string)
+declare function local:group-set($group-name as xs:string, 
+                    $setting as xs:string, $value as xs:string)
 as empty-sequence()
 {
     let $config := admin:get-configuration()
@@ -485,13 +500,27 @@ as empty-sequence()
                 xdmp:add-response-header("x-booster-error",
                     fn:concat("Group '", $group-name, "' does not exist")))
         else (
-            let $group-id := admin:group-get-id($config, $group-name)
-            let $_value := $value cast as xs:unsignedInt
-            let $new-config := admin:group-set-list-cache-size($config, $group-id, $_value)
-            return
-                admin:save-configuration($new-config),
-                xdmp:set-response-code(200, "OK"))
+            let $valid-settings := $CONFIG//option[@value="group-set"]/allowed-settings/setting/text()
+            return 
+                if (fn:not($setting eq $valid-settings)) then (
+                    xdmp:set-response-code(404, "Not Found"),
+                    xdmp:add-response-header("x-booster-error",
+                        fn:concat("Group setting '", $setting, "' does not exist")))
+                else (
+                    let $group-id := admin:group-get-id($config, $group-name)
+                    (: cast the value according to the config specified @cast :)
+                    let $val-type := $CONFIG//setting[text()=$setting]/@cast 
+                    let $type-constructor := xdmp:function(xs:QName($val-type))
+                    let $_value := xdmp:apply($type-constructor, $value)
+                    (: construct and apply the group-set function with the newly cast value :)
+                    let $func-name := fn:concat("admin:group-set-", $setting)
+                    let $set-function := xdmp:function(xs:QName($func-name))
+                    let $new-config := xdmp:apply($set-function, $config, $group-id, $_value)
+                    return
+                        admin:save-configuration($new-config),
+                        xdmp:set-response-code(200, "OK")))
 };
+
 
 
 (:---------- hosts -----------------------------------------------------------:)

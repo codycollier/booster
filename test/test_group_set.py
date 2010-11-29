@@ -6,8 +6,8 @@ import unittest
 import boostertest
 
 
-class TestGroupEdit(boostertest.BoosterTestCase):
-    """ Test the actions related to editing of an existing group """
+class TestGroupSet(boostertest.BoosterTestCase):
+    """ Test the group-set* action """
 
     def setUp(self):
         """ Create a test group to be used in most tests """
