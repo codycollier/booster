@@ -122,6 +122,10 @@ declare variable $CONFIG:=
                 <option value="group-delete">
                   <required>group-name</required>
                 </option>
+                <option value="group-set-list-cache-size">
+                    <required>group-name</required>
+                    <required>value</required>
+                </option>
                 <option value="user-create">
                     <required>user-name</required>
                     <required>description</required>
@@ -161,7 +165,6 @@ declare function local:appserver-create-http($appserver-name as xs:string,
                     $database-name as xs:string, $group-name as xs:string,
                     $modules-name as xs:string, $port as xs:string,
                     $root as xs:string)
-
 as empty-sequence()
 {
     let $config := admin:get-configuration()
@@ -201,7 +204,6 @@ declare function local:appserver-create-xdbc($appserver-name as xs:string,
                     $database-name as xs:string, $group-name as xs:string,
                     $modules-name as xs:string, $port as xs:string,
                     $root as xs:string)
-
 as empty-sequence()
 {
     let $config := admin:get-configuration()
@@ -239,7 +241,6 @@ as empty-sequence()
 declare function local:appserver-create-webdav($appserver-name as xs:string,
                     $database-name as xs:string, $group-name as xs:string,
                     $port as xs:string, $root as xs:string)
-
 as empty-sequence()
 {
     let $config := admin:get-configuration()
@@ -465,8 +466,37 @@ declare function local:group-delete($group-name as xs:string) as empty-sequence(
             xdmp:set-response-code(200, "OK"))
 };
 
+(:~
+ : Set a group's list cache size
+ :   wraps: admin:group-set-list-cache-size
+ : 
+ : @param $group-name The name of the group
+ : @param $value The value to set for the list cache size
+ : @return Returns status 200 on success and 404 if group does not exist
+ :)
+declare function local:group-set-list-cache-size($group-name as xs:string, 
+                                                    $value as xs:string)
+as empty-sequence()
+{
+    let $config := admin:get-configuration()
+    return
+        if (fn:not(admin:group-exists($config, $group-name))) then (
+                xdmp:set-response-code(404, "Not Found"),
+                xdmp:add-response-header("x-booster-error",
+                    fn:concat("Group '", $group-name, "' does not exist")))
+        else (
+            let $group-id := admin:group-get-id($config, $group-name)
+            let $_value := $value cast as xs:unsignedInt
+            let $new-config := admin:group-set-list-cache-size($config, $group-id, $_value)
+            return
+                admin:save-configuration($new-config),
+                xdmp:set-response-code(200, "OK"))
+};
+
 
 (:---------- hosts -----------------------------------------------------------:)
+
+
 
 (:---------- users -----------------------------------------------------------:)
 
