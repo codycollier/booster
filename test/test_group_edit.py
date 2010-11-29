@@ -31,15 +31,17 @@ class TestGroupEdit(boostertest.BoosterTestCase):
             response, body = self.booster.request(params)
             self.assertTrue(response.status in (404, 200))
 
-    def test_basic_group_set_list_cache_size_results_in_200(self):
-        """ A basic set of a group list cache size should return a 200 """
+    def test_basic_group_set_settings_result_in_200(self):
+        """ Ensure happy path versions of group-set settings return 201"""
         params = self.params
-        params['action'] = "group-set-list-cache-size"
-        params['value'] = "100"
-        response, body = self.booster.request(params)
-        err = response.get("x-booster-error", "none")
-        self.assertEqual(err, "none")
-
+        params['action'] = "group-set"
+        settings = (("list-cache-size", "500"), 
+                    ("compressed-tree-cache-size", "300"))
+        for pair in settings:
+            params['setting'], params['value'] = pair
+            response, body = self.booster.request(params)
+            err = response.get("x-booster-error", "none")
+            self.assertEqual(err, "none")
 
 
 
