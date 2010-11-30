@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 
+import time
 import unittest
 
 import boostertest
@@ -25,6 +26,7 @@ class TestAppserverDelete(boostertest.BoosterTestCase):
         params['group-name'] = "Default"
         for appserver in self.teardown_appservers:
             params['appserver-name'] = appserver
+            time.sleep(3)
             response, body = self.booster.request(params)
             self.assertTrue(response.status in (404, 200))
 
@@ -61,6 +63,15 @@ class TestAppserverDelete(boostertest.BoosterTestCase):
         self.assertEqual(response.status, 404)
         self.assertTrue(err.find("does not exist") != 1)
 
+    def test_empty_appserver_name_results_in_404(self):
+        """ A appserver-delete with empty appserver-name value should result in 404 """
+        params = self.params
+        params['appserver-name'] = ""
+        response, body = self.booster.request(params)
+        err = response.get("x-booster-error", "none")
+        self.assertEqual(response.status, 404)
+        self.assertTrue(err.find("Appserver '' does not exist") != -1) 
+
     def test_delete_appserver_with_no_appserver_name_results_in_400(self):
         """ A appserver-delete with missing appserver-name should result in 400 """
         params = self.params
@@ -69,17 +80,6 @@ class TestAppserverDelete(boostertest.BoosterTestCase):
         err = response.get("x-booster-error", "")
         self.assertEqual(response.status, 400)
         self.assertTrue(err.find("valid set of arguments was not provided") != 1)
-
-    @boostertest.skiptest
-    def test_empty_appserver_name_results_in_500(self):
-        """ A appserver-delete with empty appserver-name value should result in 500 """
-        params = self.params
-        params['appserver-name'] = ""
-        response, body = self.booster.request(params)
-        err = response.get("x-booster-error", "none")
-        self.assertEqual(response.status, 500)
-        self.assertTrue(err.find("Error running action 'appserver-delete'") != -1) 
-        self.assertTrue(err.find("Error: Invalid lexical value") != -1)
 
 
 if __name__=="__main__":

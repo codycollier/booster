@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 
+import time
 import unittest
 
 import boostertest
@@ -30,6 +31,7 @@ class TestAppserverCreateWebdav(boostertest.BoosterTestCase):
             params['appserver-name'] = appserver
             response, body = self.booster.request(params)
             self.assertTrue(response.status in (404, 200))
+            time.sleep(3)
 
     def test_basic_webdav_appserver_creation_results_in_201(self):
         """ A successful webdav appserver creation should result in a 201 """
@@ -40,6 +42,7 @@ class TestAppserverCreateWebdav(boostertest.BoosterTestCase):
         err = response.get("x-booster-error", "none")
         self.assertEqual(response.status, 201)
         self.assertEqual(err, "none")
+        time.sleep(3)
 
     def test_create_webdav_appserver_with_existing_name_results_in_409(self):
         """ Attempting to create a pre-existing webdav appserver should result in 409 """ 
@@ -49,6 +52,7 @@ class TestAppserverCreateWebdav(boostertest.BoosterTestCase):
         # create the appserver
         response, body = self.booster.request(params)
         self.assertEqual(response.status, 201)
+        time.sleep(3)
         # second create should result in 409
         response, body = self.booster.request(params)
         err = response.get("x-booster-error", "none")

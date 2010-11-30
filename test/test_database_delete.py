@@ -54,7 +54,16 @@ class TestDatabaseDelete(boostertest.BoosterTestCase):
         response, body = self.booster.request(params)
         err = response.get("x-booster-error", "")
         self.assertEqual(response.status, 404)
-        self.assertTrue(err.find("does not exist") != 1)
+        self.assertTrue(err.find("does not exist") != -1) 
+
+    def test_empty_database_name_results_in_404(self):
+        """ A database-delete with empty database-name value should result in 404 """
+        params = self.params
+        params['database-name'] = ""
+        response, body = self.booster.request(params)
+        err = response.get("x-booster-error", "none")
+        self.assertEqual(response.status, 404)
+        self.assertTrue(err.find("Database '' does not exist") != -1) 
 
     def test_delete_database_with_no_database_name_results_in_400(self):
         """ A database-delete with missing database-name should result in 400 """
@@ -65,16 +74,6 @@ class TestDatabaseDelete(boostertest.BoosterTestCase):
         self.assertEqual(response.status, 400)
         self.assertTrue(err.find("valid set of arguments was not provided") != 1)
 
-    @boostertest.skiptest
-    def test_empty_database_name_results_in_500(self):
-        """ A database-delete with empty database-name value should result in 500 """
-        params = self.params
-        params['database-name'] = ""
-        response, body = self.booster.request(params)
-        err = response.get("x-booster-error", "none")
-        self.assertEqual(response.status, 500)
-        self.assertTrue(err.find("Error running action 'database-delete'") != -1) 
-        self.assertTrue(err.find("Error: Invalid lexical value") != -1)
 
 
 if __name__=="__main__":

@@ -53,6 +53,15 @@ class TestGroupDelete(boostertest.BoosterTestCase):
         self.assertEqual(response.status, 404)
         self.assertTrue(err.find("does not exist") != 1)
 
+    def test_empty_group_name_results_in_404(self):
+        """ A group-delete with empty group-name value should result in 404 """
+        params = self.params
+        params['group-name'] = ""
+        response, body = self.booster.request(params)
+        err = response.get("x-booster-error", "none")
+        self.assertEqual(response.status, 404)
+        self.assertTrue(err.find("Group '' does not exist") != -1)
+
     def test_delete_group_with_no_group_name_results_in_400(self):
         """ A group-delete with missing group-name should result in 400 """
         params = self.params
@@ -61,17 +70,6 @@ class TestGroupDelete(boostertest.BoosterTestCase):
         err = response.get("x-booster-error", "")
         self.assertEqual(response.status, 400)
         self.assertTrue(err.find("valid set of arguments was not provided") != 1)
-
-    @boostertest.skiptest
-    def test_empty_group_name_results_in_500(self):
-        """ A group-delete with empty group-name value should result in 500 """
-        params = self.params
-        params['group-name'] = ""
-        response, body = self.booster.request(params)
-        err = response.get("x-booster-error", "none")
-        self.assertEqual(response.status, 500)
-        self.assertTrue(err.find("Error running action 'group-delete'") != -1) 
-        self.assertTrue(err.find("Error: Invalid lexical value") != -1)
 
 
 if __name__=="__main__":
