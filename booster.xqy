@@ -163,6 +163,10 @@ declare variable $CONFIG:=
                         <setting cast="xs:unsignedInt">xdqp-timeout</setting>
                     </allowed-settings>
                 </option>
+                <option value="host-set-group">
+                    <required>host-name</required> 
+                    <required>group-name</required>
+                </option>
                 <option value="user-create">
                     <required>user-name</required>
                     <required>description</required>
@@ -336,7 +340,7 @@ as empty-sequence()
  : @param $database-name The name of the database to be created
  : @param $schema-db-name The name of the Schemas database for the new db
  : @param $security-db-name The name of the Security database for the new db
- : @return Returns status 201 on success, 409 if forest exists, 404 if host does not exist
+ : @return Returns status 201 on success, 409 if database exists
  :)
 declare function local:database-create($database-name as xs:string,
                     $schema-db-name as xs:string, $security-db-name as xs:string) 
@@ -363,7 +367,7 @@ as empty-sequence()
  :      wraps: admin:database-delete
  : 
  : @param $database-name The name of the database to be deleted
- : @return Returns status 200 on success and 404 if forest does not exist
+ : @return Returns status 200 on success and 404 if database does not exist
  :)
 declare function local:database-delete($database-name as xs:string)
 as empty-sequence()
@@ -389,7 +393,7 @@ as empty-sequence()
  : @param $data-directory  The path for the forest or "private"
  : @param $forest-name The name of the forest to be created
  : @param $host-name The host name where the forest will be hosted or "localhost"
- : @return Returns status 201 on success, 409 if forest exists, 404 if host does not exist
+ : @return Returns status 201 on success, 409 if forest exists
  :)
 declare function local:forest-create($data-directory as xs:string,
                     $forest-name as xs:string, $host-name as xs:string) 
@@ -553,6 +557,41 @@ as empty-sequence()
 
 (:---------- hosts -----------------------------------------------------------:)
 
+(:~
+ : Set the group membership for a given host
+ :   wraps: admin:host-set-group
+ : 
+ : @param $group-name The name of the group to set for the host
+ : @param $host-name The name of the host to update or "localhost"
+ : @return Returns 200 on success and 404 if host or group do not exist
+ :)
+declare function local:host-set-group($group-name as xs:string, 
+                    $host-name as xs:string)
+as empty-sequence()
+{
+    let $config := admin:get-configuration()
+    let $_host-name := if ($host-name eq "localhost")
+                        then (xdmp:host-name(xdmp:host()))
+                        else ($host-name)
+    return
+        if (fn:not(admin:host-exists($config, $_host-name))) then (
+                xdmp:set-response-code(404, "Not Found"),
+                xdmp:add-response-header("x-booster-error",
+                    fn:concat("Host '", $host-name, "' does not exist")))
+        else (
+            if (fn:not(admin:group-exists($config, $group-name))) then (
+                    xdmp:set-response-code(404, "Not Found"),
+                    xdmp:add-response-header("x-booster-error",
+                        fn:concat("Group '", $group-name, "' does not exist")))
+            else (
+                let $group-id := admin:group-get-id($config, $group-name)
+                let $host-id := xdmp:host($_host-name)
+                let $new-config := admin:host-set-group($config, $host-id,
+                                                            $group-id)
+                return
+                    admin:save-configuration($new-config),
+                    xdmp:set-response-code(200, "OK")))
+};
 
 
 (:---------- users -----------------------------------------------------------:)

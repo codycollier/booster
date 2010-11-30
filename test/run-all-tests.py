@@ -36,6 +36,7 @@ if __name__=="__main__":
             "test_database_create", "test_database_delete",
             "test_forest_create", "test_forest_delete",
             "test_group_create", "test_group_delete", "test_group_set", 
+            "test_host_edit",
             "test_user_create", "test_user_delete",)
 
     # create a master_suite of test module suites

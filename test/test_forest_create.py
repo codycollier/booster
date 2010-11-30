@@ -96,6 +96,7 @@ class TestForestCreate(boostertest.BoosterTestCase):
         self.assertEqual(response.status, 201)
         self.assertEqual(err, "none")
 
+    #def test_create_forest_with_nonexistent_host_results_in_404(self): (undecided...)
     #def test_create_forest_with_no_host_name_results_in_400(self):
     #def test_create_forest_with_empty_host_name_results_in_500(self):
     #def test_create_forest_with_invalid_host_name_results_in_500(self):
