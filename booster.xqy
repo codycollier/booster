@@ -98,6 +98,14 @@ declare variable $CONFIG:=
                     <required>modules-name</required>
                     <required>database-name</required>
                 </option>
+                <option value="database-attach-forest"> 
+                    <required>database-name</required>
+                    <required>forest-name</required>
+                </option>
+                <option value="database-detach-forest"> 
+                    <required>database-name</required>
+                    <required>forest-name</required>
+                </option>
                 <option value="database-create"> 
                     <required>database-name</required>
                     <required>security-db-name</required>
@@ -384,6 +392,89 @@ as empty-sequence()
             xdmp:set-response-code(200, "OK"))
 };
 
+(:~
+ : Attach a forest to a database
+ :   wraps: admin:database-attach-forest
+ : 
+ : @param $database-name The name of the database
+ : @param $forest-name The name of the forest
+ : @return Returns 200 on success, 404 if db or forest do not exist, and 409 if 
+ :              forest is already attached to a db
+ :)
+declare function local:database-attach-forest($database-name as xs:string, 
+                    $forest-name as xs:string)
+as empty-sequence()
+{
+    let $config := admin:get-configuration()
+    return
+        if (fn:not(admin:database-exists($config, $database-name))) then (
+                xdmp:set-response-code(404, "Not Found"),
+                xdmp:add-response-header("x-booster-error",
+                    fn:concat("Database '", $database-name, "' does not exist")))
+        else (
+            if (fn:not(admin:forest-exists($config, $forest-name))) then (
+                    xdmp:set-response-code(404, "Not Found"),
+                    xdmp:add-response-header("x-booster-error",
+                        fn:concat("Forest '", $forest-name, "' does not exist")))
+            else (
+                let $database-id := xdmp:database($database-name)
+                let $forest-id := xdmp:forest($forest-name)
+                let $attached-db := admin:forest-get-database($config, $forest-id)
+                return
+                    if (fn:not(fn:empty($attached-db))) then (
+                        xdmp:set-response-code(409, "Conflict"),
+                        xdmp:add-response-header("x-booster-error",
+                            fn:concat("Forest is already attached to a database")))
+                    else ( 
+                        let $new-config := admin:database-attach-forest($config, 
+                                                    $database-id, $forest-id)
+                        return
+                            admin:save-configuration($new-config),
+                            xdmp:set-response-code(200, "OK"))))
+};
+
+(:~
+ : Detach a forest from a database
+ :   wraps: admin:database-detach-forest
+ : 
+ : @param $database-name The name of the database
+ : @param $forest-name The name of the forest
+ : @return Returns 200 on success, 404 if db or forest do not exist, and 409 if 
+ :              forest is not attached to db
+ :)
+declare function local:database-detach-forest($database-name as xs:string, 
+                    $forest-name as xs:string)
+as empty-sequence()
+{
+    let $config := admin:get-configuration()
+    return
+        if (fn:not(admin:database-exists($config, $database-name))) then (
+                xdmp:set-response-code(404, "Not Found"),
+                xdmp:add-response-header("x-booster-error",
+                    fn:concat("Database '", $database-name, "' does not exist")))
+        else (
+            if (fn:not(admin:forest-exists($config, $forest-name))) then (
+                    xdmp:set-response-code(404, "Not Found"),
+                    xdmp:add-response-header("x-booster-error",
+                        fn:concat("Forest '", $forest-name, "' does not exist")))
+            else (
+                let $database-id := xdmp:database($database-name)
+                let $forest-id := xdmp:forest($forest-name)
+                let $attached-db := admin:forest-get-database($config, $forest-id)
+                return 
+                    if (fn:not($attached-db eq $database-id)) then (
+                        xdmp:set-response-code(409, "Conflict"),
+                        xdmp:add-response-header("x-booster-error",
+                            fn:concat("Forest is not attached to given database")))
+                    else ( 
+                        let $new-config := admin:database-detach-forest($config, 
+                                                    $database-id, $forest-id)
+                        return
+                            admin:save-configuration($new-config),
+                            xdmp:set-response-code(200, "OK"))))
+};
+
+
 (:---------- forests ---------------------------------------------------------:)
 
 (:~
@@ -552,8 +643,6 @@ as empty-sequence()
                         admin:save-configuration($new-config),
                         xdmp:set-response-code(200, "OK")))
 };
-
-
 
 (:---------- hosts -----------------------------------------------------------:)
 

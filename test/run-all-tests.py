@@ -34,6 +34,7 @@ if __name__=="__main__":
             "test_appserver_delete", "test_appserver_create_http",
             "test_appserver_create_xdbc", "test_appserver_create_webdav",
             "test_database_create", "test_database_delete",
+            "test_database_forest",
             "test_forest_create", "test_forest_delete",
             "test_group_create", "test_group_delete", "test_group_set", 
             "test_host_edit",
