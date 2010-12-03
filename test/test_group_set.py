@@ -99,7 +99,36 @@ class TestGroupSet(boostertest.BoosterTestCase):
         err = response.get("x-booster-error", "none")
         self.assertTrue(err.find("Group setting 'fake-setting' does not exist") > -1)
 
+    def test_group_set_with_missing_required_parameter_results_in_400(self):
+        """ A missing but required parameter should result in 400 """
+        params = {}
+        params['action'] = "group-set"
+        params['group-name'] = self.params['group-name']
+        params['setting'] = "list-cache-partitions"
+        params['value'] = "1"
+        for rp in ("setting", "value"):
+            params2 = params.copy()
+            del params2[rp]
+            response, body = self.booster.request(params2)
+            err = response.get("x-booster-error", "none")
+            self.assertEqual(response.status, 400)
+            self.assertTrue(err.find("valid set of arguments was not provided") != 1)
 
+    def test_group_set_with_empty_required_parameter_results_in_500(self):
+        """ An empty but required parameter should result in 500 """
+        params = {}
+        params['action'] = "group-set"
+        params['group-name'] = self.params['group-name']
+        params['setting'] = "list-cache-partitions"
+        params['value'] = "1"
+        for rp in ("value",):
+            params2 = params.copy()
+            params2[rp] = ""
+            response, body = self.booster.request(params2)
+            err = response.get("x-booster-error", "none")
+            self.assertEqual(response.status, 500)
+            self.assertTrue(err.find("Error running action 'group-set'") != -1)
+            self.assertTrue(err.find("Error: ") != -1)
 
 
 if __name__=="__main__":
