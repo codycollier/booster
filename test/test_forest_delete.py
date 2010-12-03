@@ -35,7 +35,7 @@ class TestForestDelete(boostertest.BoosterTestCase):
         params['action'] = "forest-create"
         params['forest-name'] = "firs"
         params['host-name'] = "localhost"
-        params['data-directory'] = "private"
+        params['data-directory'] = ""
         self.teardown_forests.append(params['forest-name'])
         response, body = self.booster.request(params)
         err = response.get("x-booster-error", "none")
