@@ -10,17 +10,22 @@ class TestGroupSet(boostertest.BoosterTestCase):
     """ Test the group-set* action """
 
     def setUp(self):
-        """ Create a test group to be used in most tests """
-        self.params = {}
-        self.params['action'] = "group-create"
-        self.params['group-name'] = "group007"
-        response, body = self.booster.request(self.params)
+        """ Create group and params """
+        # create test group
+        params = {}
+        params['action'] = "group-create"
+        params['group-name'] = "group007"
+        response, body = self.booster.request(params)
         err = response.get("x-booster-error", "none")
         self.assertEqual(response.status, 201)
         self.assertEqual(err, "none")
         # collect group names for later teardown
         self.teardown_groups = []
-        self.teardown_groups.append(self.params['group-name'])
+        self.teardown_groups.append(params['group-name'])
+        # common params
+        self.params = {}
+        self.params['action'] = "group-set"
+        self.params['group-name'] = params['group-name']
 
     def tearDown(self):
         """ Remove items from server created during tests """
@@ -34,7 +39,6 @@ class TestGroupSet(boostertest.BoosterTestCase):
     def test_basic_group_set_settings_result_in_200(self):
         """ Ensure happy path versions of group-set settings return 201"""
         params = self.params
-        params['action'] = "group-set"
         # skipped
         #("audit-role-restriction", ""),            # skipped - needs two val args
         #("audit-uri-restriction", ""),             # skipped - needs two val args
@@ -81,7 +85,6 @@ class TestGroupSet(boostertest.BoosterTestCase):
     def test_group_set_on_nonexistent_group_results_in_404(self):
         """ Attempting set on a non-existent group should result in 404 """
         params = self.params
-        params['action'] = "group-set"
         params['group-name'] = "group-does-not-exist"
         params['setting'] = "list-cache-partitions"
         params['value'] = "1"
@@ -92,7 +95,6 @@ class TestGroupSet(boostertest.BoosterTestCase):
     def test_group_set_on_nonexistent_setting_results_in_404(self):
         """ Attempting set on a non-existent setting should result in 404 """
         params = self.params
-        params['action'] = "group-set"
         params['setting'] = "fake-setting"
         params['value'] = "1"
         response, body = self.booster.request(params)
@@ -101,9 +103,7 @@ class TestGroupSet(boostertest.BoosterTestCase):
 
     def test_group_set_with_missing_required_parameter_results_in_400(self):
         """ A missing but required parameter should result in 400 """
-        params = {}
-        params['action'] = "group-set"
-        params['group-name'] = self.params['group-name']
+        params = self.params
         params['setting'] = "list-cache-partitions"
         params['value'] = "1"
         for rp in ("setting", "value"):
@@ -116,9 +116,7 @@ class TestGroupSet(boostertest.BoosterTestCase):
 
     def test_group_set_with_empty_required_parameter_results_in_500(self):
         """ An empty but required parameter should result in 500 """
-        params = {}
-        params['action'] = "group-set"
-        params['group-name'] = self.params['group-name']
+        params = self.params
         params['setting'] = "list-cache-partitions"
         params['value'] = "1"
         for rp in ("value",):
