@@ -123,16 +123,11 @@ declare variable $CONFIG:=
                   <required>forest-name</required>
                   <required>delete-data</required>
                 </option>
-                <option value="group-names-retrieve" />
                 <option value="group-create"> 
                     <required>group-name</required>
                 </option>
                 <option value="group-delete">
                   <required>group-name</required>
-                </option>
-                <option value="group-set-list-cache-size">
-                    <required>group-name</required>
-                    <required>value</required>
                 </option>
                 <option value="host-set-group">
                     <required>host-name</required> 
