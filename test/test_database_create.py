@@ -52,25 +52,6 @@ class TestDatabaseCreate(boostertest.BoosterTestCase):
         self.assertEqual(response.status, 409)
         self.assertTrue(err.find("already exists") != -1)
 
-    def test_create_database_with_no_database_name_results_in_400(self):
-        """ A non-existent database-name value should result in 400 """
-        params = self.params
-        del params['database-name']
-        response, body = self.booster.request(params)
-        err = response.get("x-booster-error", "")
-        self.assertEqual(response.status, 400)
-        self.assertTrue(err.find("valid set of arguments was not provided") != 1)
-
-    def test_create_database_with_empty_database_name_results_in_500(self):
-        """ An database-create with empty database-name value should result in 500 """
-        params = self.params
-        params['database-name'] = ""
-        response, body = self.booster.request(params)
-        err = response.get("x-booster-error", "none")
-        self.assertEqual(response.status, 500)
-        self.assertTrue(err.find("Error running action 'database-create'") != -1)
-        self.assertTrue(err.find("Error: Invalid configuration") != -1)
-
     def test_create_database_with_invalid_name_results_in_500(self):
         """ An database-create with invalid database-name should be rejected by api and result in 500 """
         badnames = ("%%zxcggg", "$fbbhhjh$")
@@ -84,12 +65,35 @@ class TestDatabaseCreate(boostertest.BoosterTestCase):
             self.assertTrue(err.find("Error running action 'database-create'") != -1)
             self.assertTrue(err.find("Error: Invalid configuration") != -1)
 
-    #def test_create_database_with_no_security_db_name_results_in_400(self):
-    #def test_create_database_with_empty_security_db_name_results_in_500(self):
-    #def test_create_database_with_invalid_security_db_name_results_in_500(self):
-    #def test_create_database_with_no_schema_db_name_results_in_400(self):
-    #def test_create_database_with_empty_schema_db_name_results_in_500(self):
-    #def test_create_database_with_invalid_schema_db_name_results_in_500(self):
+    #def test_create_database_with_invalid_security_db_name_results_in_500(self):   # should return 404? todo
+    #def test_create_database_with_invalid_schema_db_name_results_in_500(self):     # should return 404? todo
+
+    def test_create_database_with_missing_required_parameter_results_in_400(self):
+        """ A missing but required parameter should result in 400 """
+        required_parameters = ("database-name", "security-db-name", 
+                                "schema-db-name")
+        for rp in required_parameters:
+            params = self.params.copy()
+            del params[rp]
+            response, body = self.booster.request(params)
+            err = response.get("x-booster-error", "")
+            self.assertEqual(response.status, 400)
+            self.assertTrue(err.find("valid set of arguments was not provided") != 1)
+
+    def test_create_database_with_empty_required_parameter_results_in_500(self):
+        """ An empty but required parameter should result in 500 """
+        required_parameters = ("database-name", "security-db-name", 
+                                "schema-db-name")
+        for rp in required_parameters:
+            params = self.params.copy()
+            params[rp] = ""
+            # create should result in 500
+            response, body = self.booster.request(params)
+            err = response.get("x-booster-error", "none")
+            self.assertEqual(response.status, 500)
+            self.assertTrue(err.find("Error running action 'database-create'") != -1)
+            self.assertTrue(err.find("Error: ") != -1)
+
 
 if __name__=="__main__":
 

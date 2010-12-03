@@ -24,7 +24,7 @@ class TestHostEdit(boostertest.BoosterTestCase):
             response, body = self.booster.request(params)
             self.assertTrue(response.status in (404, 200))
 
-    def test_host_set_group_results_in_200(self):
+    def test_basic_host_set_group_results_in_200(self):
         """ A successful host group change should result in 200 """
         # create a group 
         params = {}
@@ -75,6 +75,19 @@ class TestHostEdit(boostertest.BoosterTestCase):
         self.assertEqual(response.status, 404)
         self.assertTrue(err.find("Host 'bogus-host' does not exist") > -1)
 
+    def test_host_set_group_with_missing_required_parameter_results_in_400(self):
+        """ A missing but required parameter should result in 400 """
+        params = {}
+        params['action'] = "host-set-group"
+        params['host-name'] = "localhost"
+        params['group-name'] = "Default"
+        for rp in ("host-name", "group-name"):
+            params2 = params.copy()
+            del params2[rp]
+            response, body = self.booster.request(params2)
+            err = response.get("x-booster-error", "")
+            self.assertEqual(response.status, 400)
+            self.assertTrue(err.find("valid set of arguments was not provided") != 1)
 
 
 if __name__=="__main__":

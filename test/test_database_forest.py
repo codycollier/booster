@@ -22,16 +22,16 @@ class TestDatabaseForest(boostertest.BoosterTestCase):
         paramsd['schema-db-name'] = "Schemas"
         self.teardown_databases.append(paramsd['database-name'])
         response, body = self.booster.request(paramsd)
-        self.assertEqual(response.status, 201)
+        self.assertTrue(response.status in (201, 409))
         # create a test forest 
         paramsf = {}
         paramsf['action'] = "forest-create"
         paramsf['forest-name'] = "manytrees"
         paramsf['host-name'] = "localhost"
-        paramsf['data-directory'] = "private"
+        paramsf['data-directory'] = ""
         self.teardown_forests.append(paramsf['forest-name'])
         response, body = self.booster.request(paramsf)
-        self.assertEqual(response.status, 201)
+        self.assertTrue(response.status in (201, 409))
         # set common vars
         self.params = {}
         self.params['database-name'] = paramsd['database-name']
@@ -77,6 +77,109 @@ class TestDatabaseForest(boostertest.BoosterTestCase):
         err = response.get("x-booster-error", "none")
         self.assertEqual(response.status, 200)
         self.assertEqual(err, "none")
+
+    def test_attach_with_nonexistent_database_results_in_404(self):
+        """ A forest attach to a non-existent db should result in a 404 """
+        params = self.params
+        params['action'] = "database-attach-forest"
+        params['database-name'] = "fork"
+        response, body = self.booster.request(params)
+        err = response.get("x-booster-error", "none")
+        self.assertEqual(response.status, 404)
+        self.assertEqual(err, "Database 'fork' does not exist")
+
+    def test_attach_with_nonexistent_forest_results_in_404(self):
+        """ An attach with a non-existent forest should result in a 404 """
+        params = self.params
+        params['action'] = "database-attach-forest"
+        params['forest-name'] = "spoons"
+        response, body = self.booster.request(params)
+        err = response.get("x-booster-error", "none")
+        self.assertEqual(response.status, 404)
+        self.assertEqual(err, "Forest 'spoons' does not exist")
+
+    def test_detach_with_nonexistent_database_results_in_404(self):
+        """ A forest detach to a non-existent db should result in a 404 """
+        params = self.params
+        params['action'] = "database-detach-forest"
+        params['database-name'] = "knives"
+        response, body = self.booster.request(params)
+        err = response.get("x-booster-error", "none")
+        self.assertEqual(response.status, 404)
+        self.assertEqual(err, "Database 'knives' does not exist")
+
+    def test_detach_with_nonexistent_forest_results_in_404(self):
+        """ A detach with a non-existent forest should result in a 404 """
+        params = self.params
+        params['action'] = "database-detach-forest"
+        params['forest-name'] = "sporks"
+        response, body = self.booster.request(params)
+        err = response.get("x-booster-error", "none")
+        self.assertEqual(response.status, 404)
+        self.assertEqual(err, "Forest 'sporks' does not exist")
+
+    def test_attach_on_attached_forest_results_in_409(self):
+        """ Attempting attach on an attached forest should result in a 409 """
+        # attach
+        params = self.params
+        params['action'] = "database-attach-forest"
+        response, body = self.booster.request(params)
+        self.assertEqual(response.status, 200)
+        # attempt another attach and assert
+        params['action'] = "database-attach-forest"
+        response, body = self.booster.request(params)
+        err = response.get("x-booster-error", "none")
+        self.assertEqual(response.status, 409)
+        self.assertEqual(err, "Forest is already attached to a database")
+
+    def test_detach_on_detached_forest_results_in_409(self):
+        """ Attempting detach on a detached forest should result in a 409 """
+        params = self.params
+        params['action'] = "database-detach-forest"
+        response, body = self.booster.request(params)
+        err = response.get("x-booster-error", "none")
+        self.assertEqual(response.status, 409)
+        self.assertEqual(err, "Forest is not attached to given database")
+
+    def test_attach_with_missing_database_name_results_in_400(self):
+        """ A attach with a missing database-name should result in 400 """
+        params = self.params
+        params['action'] = "database-attach-forest"
+        del params['database-name']
+        response, body = self.booster.request(params)
+        err = response.get("x-booster-error", "none")
+        self.assertEqual(response.status, 400)
+        self.assertTrue(err.find("valid set of arguments was not provided") != 1)
+
+    def test_detach_with_missing_forest_name_results_in_400(self):
+        """ A detach with a missing forest-name should result in 400 """
+        params = self.params
+        params['action'] = "database-detach-forest"
+        del params['forest-name']
+        response, body = self.booster.request(params)
+        err = response.get("x-booster-error", "none")
+        self.assertEqual(response.status, 400)
+        self.assertTrue(err.find("valid set of arguments was not provided") != 1)
+
+    def test_detach_with_missing_database_name_results_in_400(self):
+        """ A detach with a missing database-name should result in 400 """
+        params = self.params
+        params['action'] = "database-detach-forest"
+        del params['database-name']
+        response, body = self.booster.request(params)
+        err = response.get("x-booster-error", "none")
+        self.assertEqual(response.status, 400)
+        self.assertTrue(err.find("valid set of arguments was not provided") != 1)
+
+    def test_detach_with_missing_forest_name_results_in_400(self):
+        """ A detach with a missing forest-name should result in 400 """
+        params = self.params
+        params['action'] = "database-detach-forest"
+        del params['forest-name']
+        response, body = self.booster.request(params)
+        err = response.get("x-booster-error", "none")
+        self.assertEqual(response.status, 400)
+        self.assertTrue(err.find("valid set of arguments was not provided") != 1)
 
 
 if __name__=="__main__":

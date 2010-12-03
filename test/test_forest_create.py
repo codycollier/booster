@@ -15,7 +15,7 @@ class TestForestCreate(boostertest.BoosterTestCase):
         self.params['action'] = "forest-create"
         self.params['forest-name'] = "roosevelt"
         self.params['host-name'] = "localhost"
-        self.params['data-directory'] = "private"
+        self.params['data-directory'] = ""  # private
         # collect app server names for later teardown
         self.teardown_forests = []
 
@@ -53,25 +53,6 @@ class TestForestCreate(boostertest.BoosterTestCase):
         self.assertEqual(response.status, 409)
         self.assertTrue(err.find("already exists") != -1)
 
-    def test_create_forest_with_no_forest_name_results_in_400(self):
-        """ A non-existent forest-name value should result in 400 """
-        params = self.params
-        del params['forest-name']
-        response, body = self.booster.request(params)
-        err = response.get("x-booster-error", "")
-        self.assertEqual(response.status, 400)
-        self.assertTrue(err.find("valid set of arguments was not provided") != 1)
-
-    def test_create_forest_with_empty_forest_name_results_in_500(self):
-        """ An forest-create with empty forest-name value should result in 500 """
-        params = self.params
-        params['forest-name'] = ""
-        response, body = self.booster.request(params)
-        err = response.get("x-booster-error", "none")
-        self.assertEqual(response.status, 500)
-        self.assertTrue(err.find("Error running action 'forest-create'") != -1)
-        self.assertTrue(err.find("Error: Invalid configuration") != -1)
-
     def test_create_forest_with_invalid_name_results_in_500(self):
         """ An forest-create with invalid forest-name should be rejected by api and result in 500 """
         badnames = ("%%zxcggg", "$fbbhhjh$")
@@ -96,13 +77,33 @@ class TestForestCreate(boostertest.BoosterTestCase):
         self.assertEqual(response.status, 201)
         self.assertEqual(err, "none")
 
-    #def test_create_forest_with_nonexistent_host_results_in_404(self): (undecided...)
-    #def test_create_forest_with_no_host_name_results_in_400(self):
-    #def test_create_forest_with_empty_host_name_results_in_500(self):
-    #def test_create_forest_with_invalid_host_name_results_in_500(self):
-    #def test_create_forest_with_no_data_directory_results_in_400(self):
-    #def test_create_forest_with_empty_data_directory_results_in_500(self):
-    #def test_create_forest_with_invalid_data_directory_results_in_500(self):
+    #def test_create_forest_with_invalid_data_directory_results_in_500(self):   # ml api allows this but it won't mount
+    #def test_create_forest_with_invalid_host_results_in_500(self):     # should return 404?  todo
+
+    def test_create_forest_with_missing_required_parameter_results_in_400(self):
+        """ A missing but required parameter should result in 400 """
+        required_parameters = ("forest-name", "host-name", "data-directory")
+        for rp in required_parameters:
+            params = self.params.copy()
+            del params[rp]
+            response, body = self.booster.request(params)
+            err = response.get("x-booster-error", "")
+            self.assertEqual(response.status, 400)
+            self.assertTrue(err.find("valid set of arguments was not provided") != 1)
+
+    def test_create_forest_with_empty_required_parameter_results_in_500(self):
+        """ An empty but required parameter should result in 500 """
+        required_parameters = ("forest-name", "host-name")
+        for rp in required_parameters:
+            params = self.params.copy()
+            params[rp] = ""
+            # create should result in 500
+            response, body = self.booster.request(params)
+            err = response.get("x-booster-error", "none")
+            self.assertEqual(response.status, 500)
+            self.assertTrue(err.find("Error running action 'forest-create'") != -1)
+            self.assertTrue(err.find("Error: ") != -1)
+
 
 
 if __name__=="__main__":

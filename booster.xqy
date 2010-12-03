@@ -481,7 +481,9 @@ as empty-sequence()
  : Create a forest with the given name 
  :      wraps: admin:forest-create
  : 
- : @param $data-directory  The path for the forest or "private"
+ : Note, an empty data-directory will result in private forest
+ : 
+ : @param $data-directory  The path for the forest
  : @param $forest-name The name of the forest to be created
  : @param $host-name The host name where the forest will be hosted or "localhost"
  : @return Returns status 201 on success, 409 if forest exists
@@ -500,11 +502,8 @@ as empty-sequence()
             let $host-id := if ($host-name eq "localhost") 
                             then (xdmp:host())
                             else (xdmp:host($host-name))
-            let $_data-directory := if ($data-directory eq "private") 
-                                        then (())
-                                        else ($data-directory)
             let $new-config := admin:forest-create($config, $forest-name, 
-                                                    $host-id, $_data-directory)
+                                                    $host-id, $data-directory)
             return 
                 admin:save-configuration($new-config),
                 xdmp:set-response-code(201, "Created"))
@@ -649,7 +648,7 @@ as empty-sequence()
 (:~
  : Set the group membership for a given host
  :   wraps: admin:host-set-group
- : 
+ :
  : @param $group-name The name of the group to set for the host
  : @param $host-name The name of the host to update or "localhost"
  : @return Returns 200 on success and 404 if host or group do not exist

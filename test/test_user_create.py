@@ -77,24 +77,6 @@ class TestUserCreate(boostertest.BoosterTestCase):
         self.assertEqual(response.status, 201)
         self.assertEqual(err, "none")
 
-    def test_create_user_with_no_user_name_results_in_400(self):
-        """ A user-create with missing user-name should result in 400 """
-        response, body = self.booster.request(self.params)
-        err = response.get("x-booster-error", "")
-        self.assertEqual(response.status, 400)
-        self.assertTrue(err.find("valid set of arguments was not provided") != 1)
-
-    def test_create_user_with_empty_user_name_results_in_500(self):
-        """ A user-create with empty user-name value should result in 500 """
-        params = self.params
-        params.update(self.user1)   # merge in user1 data
-        params['user-name'] = ""
-        response, body = self.booster.request(params)
-        err = response.get("x-booster-error", "none")
-        self.assertEqual(response.status, 500)
-        self.assertTrue(err.find("Error running action 'user-create'") != -1) 
-        self.assertTrue(err.find("Error: Invalid lexical value") != -1) 
-
     def test_create_user_with_invalid_name_results_in_500(self):
         """ A user-create with invalid user-name should be rejected by api and result in 500 """
         params = self.params
@@ -110,21 +92,58 @@ class TestUserCreate(boostertest.BoosterTestCase):
             self.assertTrue(err.find("Error running action 'user-create'") != -1)
             self.assertTrue(err.find("Error: Invalid lexical value") != -1)
 
-    #def test_create_user_with_no_password_results_in_400(self):
-    #def test_create_user_with_empty_password_results_in_500(self):
-    #def test_create_user_with_invalid_password_results_in_500(self):
-    #def test_create_user_with_no_description_results_in_400(self):
-    #def test_create_user_with_empty_description_results_in_201(self):
-    #def test_create_user_with_invalid_description_results_in_500(self):
-    #def test_create_user_with_no_role_names_results_in_400(self):
-    #def test_create_user_with_empty_role_names_results_in_201(self):
-    #def test_create_user_with_invalid_role_names_results_in_500(self):
-    #def test_create_user_with_no_permissions_results_in_400(self):
-    #def test_create_user_with_empty_permissions_results_in_201(self):
-    #def test_create_user_with_invalid_permissions_results_in_500(self):
-    #def test_create_user_with_no_collections_results_in_400(self):
-    #def test_create_user_with_empty_collections_results_in_201(self):
-    #def test_create_user_with_invalid_collections_results_in_500(self):
+    #def test_create_user_with_invalid_password_results_in_500(self):       # what is an invalid password?
+    #def test_create_user_with_invalid_description_results_in_500(self):    # what is an invalid description?
+    #def test_create_user_with_invalid_collection_results_in_500(self):     # what is an invalid collection?
+
+    def test_create_user_with_invalid_role_names_results_in_500(self):
+        """ A user-create with invalid role-names should be rejected by api and result in 500 """
+        params = self.params
+        params.update(self.user1)   # merge in user1 data
+        params['role-names'] = "badrole"
+        response, body = self.booster.request(params)
+        err = response.get("x-booster-error", "none")
+        self.assertEqual(response.status, 500)
+        self.assertTrue(err.find("Error running action 'user-create'") != -1)
+        self.assertTrue(err.find("Error: Role does not exist") != -1)
+
+    def test_create_user_with_invalid_permissions_results_in_500(self):
+        """ A user-create with invalid permissions should be rejected by api and result in 500 """
+        params = self.params
+        params.update(self.user1)   # merge in user1 data
+        params['permissions'] = "waldo,walk"
+        response, body = self.booster.request(params)
+        err = response.get("x-booster-error", "none")
+        self.assertEqual(response.status, 500)
+        self.assertTrue(err.find("Error running action 'user-create'") != -1)
+        self.assertTrue(err.find("Error: Illegal Capability") != -1)
+
+    def test_create_user_with_missing_required_parameter_results_in_400(self):
+        """ A missing but required parameter should result in 400 """
+        required_parameters = ("user-name", "password", "description", 
+                                "role-names", "permissions", "collections")
+        for rp in required_parameters:
+            params = self.params.copy()
+            params.update(self.user1)   # merge in user1 data
+            del params[rp]
+            response, body = self.booster.request(params)
+            err = response.get("x-booster-error", "")
+            self.assertEqual(response.status, 400)
+            self.assertTrue(err.find("valid set of arguments was not provided") != 1)
+
+    def test_create_user_with_empty_required_parameter_results_in_500(self):
+        """ An empty but required parameter should result in 500 """
+        required_parameters = ("user-name", "password")
+        for rp in required_parameters:
+            params = self.params.copy()
+            params.update(self.user1)   # merge in user1 data
+            params[rp] = ""
+            # create should result in 500
+            response, body = self.booster.request(params)
+            err = response.get("x-booster-error", "none")
+            self.assertEqual(response.status, 500)
+            self.assertTrue(err.find("Error running action 'user-create'") != -1)
+            self.assertTrue(err.find("Error: ") != -1)
 
 
 
