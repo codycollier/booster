@@ -134,6 +134,83 @@ declare variable $CONFIG:=
                     <required>group-name</required>
                     <required>value</required>
                 </option>
+                <option value="host-set-group">
+                    <required>host-name</required> 
+                    <required>group-name</required>
+                </option>
+                <option value="user-create">
+                    <required>user-name</required>
+                    <required>description</required>
+                    <required>password</required>
+                    <required>role-names</required>
+                    <required>permissions</required>
+                    <required>collections</required>
+                </option>
+                <option value="user-delete">
+                    <required>user-name</required>
+                </option>
+                <option value="database-set">
+                    <required>database-name</required>
+                    <required>setting</required>
+                    <required>value</required>
+                    <allowed-settings>
+                        <setting cast="xs:boolean">attribute-value-positions</setting>
+                        <setting cast="xs:boolean">collection-lexicon</setting>
+                        <setting cast="xs:string">directory-creation</setting>
+                        <setting cast="xs:boolean">element-value-positions</setting>
+                        <setting cast="xs:boolean">element-word-positions</setting>
+                        <setting cast="xs:boolean">enabled</setting>
+                        <setting cast="xs:string">expunge-locks</setting>
+                        <setting cast="xs:boolean">fast-case-sensitive-searches</setting>
+                        <setting cast="xs:boolean">fast-diacritic-sensitive-searches</setting>
+                        <setting cast="xs:boolean">fast-element-character-searches</setting>
+                        <setting cast="xs:boolean">fast-element-phrase-searches</setting>
+                        <setting cast="xs:boolean">fast-element-trailing-wildcard-searches</setting>
+                        <setting cast="xs:boolean">fast-element-word-searches</setting>
+                        <setting cast="xs:boolean">fast-phrase-searches</setting>
+                        <setting cast="xs:boolean">fast-reverse-searches</setting>
+                        <setting cast="xs:string">format-compatibility</setting>
+                        <setting cast="xs:unsignedInt">in-memory-limit</setting>
+                        <setting cast="xs:unsignedInt">in-memory-list-size</setting>
+                        <setting cast="xs:unsignedInt">in-memory-range-index-size</setting>
+                        <setting cast="xs:unsignedInt">in-memory-reverse-index-size</setting>
+                        <setting cast="xs:unsignedInt">in-memory-tree-size</setting>
+                        <setting cast="xs:string">index-detection</setting>
+                        <setting cast="xs:boolean">inherit-collections</setting>
+                        <setting cast="xs:boolean">inherit-permissions</setting>
+                        <setting cast="xs:boolean">inherit-quality</setting>
+                        <setting cast="xs:unsignedInt">journal-size</setting>
+                        <setting cast="xs:string">journaling</setting>
+                        <setting cast="xs:string">language</setting>
+                        <setting cast="xs:string">locking</setting>
+                        <setting cast="xs:boolean">maintain-directory-last-modified</setting>
+                        <setting cast="xs:boolean">maintain-last-modified</setting>
+                        <setting cast="xs:boolean">merge-enable</setting>
+                        <setting cast="xs:unsignedInt">merge-max-size</setting>
+                        <setting cast="xs:unsignedInt">merge-min-ratio</setting>
+                        <setting cast="xs:unsignedInt">merge-min-size</setting>
+                        <setting cast="xs:string">merge-priority</setting>
+                        <setting cast="xs:unsignedLong">merge-timestamp</setting>
+                        <setting cast="xs:string">name</setting>
+                        <setting cast="xs:boolean">one-character-searches</setting>
+                        <setting cast="xs:unsignedInt">positions-list-max-size</setting>
+                        <setting cast="xs:boolean">preallocate-journals</setting>
+                        <setting cast="xs:boolean">preload-mapped-data</setting>
+                        <setting cast="xs:string">range-index-optimize</setting>
+                        <setting cast="xs:boolean">reindexer-enable</setting>
+                        <setting cast="xs:unsignedInt">reindexer-throttle</setting>
+                        <setting cast="xs:unsignedInt">reindexer-timestamp</setting>
+                        <setting cast="xs:string">stemmed-searches</setting>
+                        <setting cast="xs:boolean">three-character-searches</setting>
+                        <setting cast="xs:boolean">three-character-word-positions</setting>
+                        <setting cast="xs:boolean">trailing-wildcard-searches</setting>
+                        <setting cast="xs:boolean">trailing-wildcard-word-positions</setting>
+                        <setting cast="xs:boolean">two-character-searches</setting>
+                        <setting cast="xs:boolean">uri-lexicon</setting>
+                        <setting cast="xs:boolean">word-positions</setting>
+                        <setting cast="xs:boolean">word-searches</setting>
+                    </allowed-settings>
+                </option>
                 <option value="group-set">
                     <required>group-name</required>
                     <required>setting</required>
@@ -170,21 +247,6 @@ declare variable $CONFIG:=
                         <setting cast="xs:boolean">xdqp-ssl-enabled</setting>
                         <setting cast="xs:unsignedInt">xdqp-timeout</setting>
                     </allowed-settings>
-                </option>
-                <option value="host-set-group">
-                    <required>host-name</required> 
-                    <required>group-name</required>
-                </option>
-                <option value="user-create">
-                    <required>user-name</required>
-                    <required>description</required>
-                    <required>password</required>
-                    <required>role-names</required>
-                    <required>permissions</required>
-                    <required>collections</required>
-                </option>
-                <option value="user-delete">
-                    <required>user-name</required>
                 </option>
             </valid-options>
         </param>
@@ -474,6 +536,51 @@ as empty-sequence()
                             xdmp:set-response-code(200, "OK"))))
 };
 
+(:~
+ : Update a given database setting with the given value
+ :   wraps: admin:database-set-*
+ : 
+ : This function will accept a setting and a value to set for a database.  It will 
+ : confirm the setting name exists in the config xml and it will case the 
+ : value as the type specified in the config xml.  The relevant admin method 
+ : call will then be dynamically generated and applied.
+ : 
+ : @param $database-name The name of the database to edit
+ : @param $setting The name of the setting to be changed
+ : @param $value The value to apply to the setting
+ : @return Returns 200 on success or 404 if group or setting does not exist
+ :)
+declare function local:database-set($database-name as xs:string,
+                    $setting as xs:string, $value as xs:string)
+as empty-sequence()
+{
+    let $config := admin:get-configuration()
+    return
+        if (fn:not(admin:database-exists($config, $database-name))) then (
+                xdmp:set-response-code(404, "Not Found"),
+                xdmp:add-response-header("x-booster-error",
+                    fn:concat("Database '", $database-name, "' does not exist")))
+        else (
+            let $valid-settings := $CONFIG//option[@value="database-set"]/allowed-settings/setting/text()
+            return
+                if (fn:not($setting eq $valid-settings)) then (
+                    xdmp:set-response-code(404, "Not Found"),
+                    xdmp:add-response-header("x-booster-error",
+                        fn:concat("Database setting '", $setting, "' does not exist")))
+                else (
+                    let $database-id := xdmp:database($database-name)
+                    (: cast the value according to the config specified @cast :)
+                    let $val-type := $CONFIG//setting[text()=$setting]/@cast
+                    let $type-constructor := xdmp:function(xs:QName($val-type))
+                    let $_value := xdmp:apply($type-constructor, $value)
+                    (: construct and apply the group-set function with the newly cast value :)
+                    let $func-name := fn:concat("admin:database-set-", $setting)
+                    let $set-function := xdmp:function(xs:QName($func-name))
+                    let $new-config := xdmp:apply($set-function, $config, $database-id, $_value)
+                    return
+                        admin:save-configuration($new-config),
+                        xdmp:set-response-code(200, "OK")))
+};
 
 (:---------- forests ---------------------------------------------------------:)
 
