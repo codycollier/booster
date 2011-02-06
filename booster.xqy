@@ -144,6 +144,46 @@ declare variable $CONFIG:=
                 <option value="user-delete">
                     <required>user-name</required>
                 </option>
+                <option value="appserver-set">
+                    <required>appserver-name</required>
+                    <required>setting</required>
+                    <required>value</required>
+                    <allowed-settings>
+                        <setting cast="xs:string">address</setting>
+                        <setting cast="xs:string">authentication</setting>
+                        <setting cast="xs:unsignedInt">backlog</setting>
+                        <setting cast="xs:string">collation</setting>
+                        <setting cast="xs:boolean">compute-content-length</setting>
+                        <setting cast="xs:unsignedInt">concurrent-request-limit</setting>
+                        <setting cast="xs:boolean">debug-allow</setting>
+                        <setting cast="xs:unsignedInt">default-time-limit</setting>
+                        <setting cast="xs:string">default-xquery-version</setting>
+                        <setting cast="xs:boolean">display-last-login</setting>
+                        <setting cast="xs:boolean">enabled</setting>
+                        <setting cast="xs:string">error-handler</setting>
+                        <setting cast="xs:unsignedInt">keep-alive-timeout</setting>
+                        <setting cast="xs:boolean">log-errors</setting>
+                        <setting cast="xs:unsignedInt">max-time-limit</setting>
+                        <setting cast="xs:string">name</setting>
+                        <setting cast="xs:string">output-encoding</setting>
+                        <setting cast="xs:string">output-sgml-character-entities</setting>
+                        <setting cast="xs:unsignedInt">port</setting>
+                        <setting cast="xs:unsignedInt">pre-commit-trigger-depth</setting>
+                        <setting cast="xs:unsignedInt">pre-commit-trigger-limit</setting>
+                        <setting cast="xs:boolean">profile-allow</setting>
+                        <setting cast="xs:unsignedInt">request-timeout</setting>
+                        <setting cast="xs:string">root</setting>
+                        <setting cast="xs:unsignedInt">session-timeout</setting>
+                        <setting cast="xs:boolean">ssl-allow-sslv3</setting>
+                        <setting cast="xs:boolean">ssl-allow-tls</setting>
+                        <setting cast="xs:string">ssl-ciphers</setting>
+                        <setting cast="xs:string">ssl-hostname</setting>
+                        <setting cast="xs:boolean">ssl-require-client-certificate</setting>
+                        <setting cast="xs:unsignedInt">static-expires</setting>
+                        <setting cast="xs:unsignedInt">threads</setting>
+                        <setting cast="xs:string">url-rewriter</setting>
+                    </allowed-settings>
+                </option>
                 <option value="database-set">
                     <required>database-name</required>
                     <required>setting</required>
@@ -395,6 +435,53 @@ as empty-sequence()
                 xdmp:set-response-code(200, "OK"))
 };
 
+(:~
+ : Update a given appserver setting with the given value
+ :   wraps: admin:appserver-set-*
+ : 
+ : This function will accept a setting and a value to set for an appserver.  It 
+ : will confirm the setting name exists in the config xml and it will cast the 
+ : value as the type specified in the config xml.  The relevant admin method 
+ : call will then be dynamically generated and applied.
+ : 
+ : @param $appserver-name The name of the appserver to edit
+ : @param $setting The name of the setting to be changed
+ : @param $value The value to apply to the setting
+ : @return Returns 200 on success or 404 if appserver or setting do not exist
+ :)
+declare function local:appserver-set($appserver-name as xs:string, 
+                    $setting as xs:string, $value as xs:string)
+as empty-sequence()
+{
+    let $config := admin:get-configuration()
+    return
+        (: todo - should group constraint be integrated here? :)
+        if (fn:not(admin:appserver-exists($config, (), $appserver-name))) then (
+                xdmp:set-response-code(404, "Not Found"),
+                xdmp:add-response-header("x-booster-error",
+                    fn:concat("Appserver '", $appserver-name, "' does not exist")))
+        else (
+            let $valid-settings := $CONFIG//option[@value="appserver-set"]/allowed-settings/setting/text()
+            return 
+                if (fn:not($setting eq $valid-settings)) then (
+                    xdmp:set-response-code(404, "Not Found"),
+                    xdmp:add-response-header("x-booster-error",
+                        fn:concat("Appserver setting '", $setting, "' does not exist")))
+                else (
+                    (: todo - should group constraint be integrated here? :)
+                    let $appserver-id := admin:appserver-get-id($config, (), $appserver-name)
+                    (: cast the value according to the config specified @cast :)
+                    let $val-type := $CONFIG//setting[text()=$setting]/@cast 
+                    let $type-constructor := xdmp:function(xs:QName($val-type))
+                    let $_value := xdmp:apply($type-constructor, $value)
+                    (: construct and apply the appserver-set function with the newly cast value :)
+                    let $func-name := fn:concat("admin:appserver-set-", $setting)
+                    let $set-function := xdmp:function(xs:QName($func-name))
+                    let $new-config := xdmp:apply($set-function, $config, $appserver-id, $_value)
+                    return
+                        admin:save-configuration($new-config),
+                        xdmp:set-response-code(200, "OK")))
+};
 
 (:---------- databases -------------------------------------------------------:)
 
@@ -535,15 +622,15 @@ as empty-sequence()
  : Update a given database setting with the given value
  :   wraps: admin:database-set-*
  : 
- : This function will accept a setting and a value to set for a database.  It will 
- : confirm the setting name exists in the config xml and it will case the 
+ : This function will accept a setting and a value to set for a database.  It 
+ : will confirm the setting name exists in the config xml and it will cast the 
  : value as the type specified in the config xml.  The relevant admin method 
  : call will then be dynamically generated and applied.
  : 
  : @param $database-name The name of the database to edit
  : @param $setting The name of the setting to be changed
  : @param $value The value to apply to the setting
- : @return Returns 200 on success or 404 if group or setting does not exist
+ : @return Returns 200 on success or 404 if database or setting do not exist
  :)
 declare function local:database-set($database-name as xs:string,
                     $setting as xs:string, $value as xs:string)
@@ -568,7 +655,7 @@ as empty-sequence()
                     let $val-type := $CONFIG//setting[text()=$setting]/@cast
                     let $type-constructor := xdmp:function(xs:QName($val-type))
                     let $_value := xdmp:apply($type-constructor, $value)
-                    (: construct and apply the group-set function with the newly cast value :)
+                    (: construct and apply the database-set function with the newly cast value :)
                     let $func-name := fn:concat("admin:database-set-", $setting)
                     let $set-function := xdmp:function(xs:QName($func-name))
                     let $new-config := xdmp:apply($set-function, $config, $database-id, $_value)
@@ -704,14 +791,14 @@ declare function local:group-delete($group-name as xs:string) as empty-sequence(
  :   wraps: admin:group-set-*
  : 
  : This function will accept a setting and a value to set for a group.  It will 
- : confirm the setting name exists in the config xml and it will case the 
+ : confirm the setting name exists in the config xml and it will cast the 
  : value as the type specified in the config xml.  The relevant admin method 
  : call will then be dynamically generated and applied.
  : 
  : @param $group-name The name of the group to edit
  : @param $setting The name of the setting to be changed
  : @param $value The value to apply to the setting
- : @return Returns 200 on success or 404 if group or setting does not exist
+ : @return Returns 200 on success or 404 if group or setting do not exist
  :)
 declare function local:group-set($group-name as xs:string, 
                     $setting as xs:string, $value as xs:string)
