@@ -15,7 +15,7 @@ class TestAppserverSet(boostertest.BoosterTestCase):
         # create test appserver
         params = {}
         params['action'] = "appserver-create-http"
-        params['appserver-name'] = "appserver007"
+        params['appserver-name'] = "test-app-123"
         params['group-name'] = "Default"
         params['modules-name'] = "Modules"
         params['database-name'] = "Documents"
@@ -61,7 +61,8 @@ class TestAppserverSet(boostertest.BoosterTestCase):
                 ("authentication", "digestbasic"),          # xs:string
                 ("backlog", "64"),                          # xs:unsignedInt
                 ("collation", "http://marklogic.com/collation/codepoint"),      # xs:string
-                ("compute-content-length", "true"),         # xs:boolean
+                # this setting only exists for webdav app servers
+                # ("compute-content-length", "true"),         # xs:boolean
                 ("concurrent-request-limit", "128"),        # xs:unsignedInt
                 ("debug-allow", "false"),                   # xs:boolean
                 ("default-time-limit", "120"),              # xs:unsignedInt
@@ -72,16 +73,17 @@ class TestAppserverSet(boostertest.BoosterTestCase):
                 ("keep-alive-timeout", "0"),                # xs:unsignedInt
                 ("log-errors", "true"),                     # xs:boolean
                 ("max-time-limit", "120"),                  # xs:unsignedInt
-                ("name", "myappserver"),                    # xs:string
+                # note this name needs to stay the same
+                ("name", "test-app-123"),                   # xs:string
                 ("output-encoding", "UTF-8"),               # xs:string
                 ("output-sgml-character-entities", "none"), # xs:string
                 ("port", "8400"),                           # xs:unsignedInt
                 ("pre-commit-trigger-depth", "5000"),       # xs:unsignedInt
                 ("pre-commit-trigger-limit", "5100"),       # xs:unsignedInt
                 ("profile-allow", "false"),                 # xs:boolean
-                ("request-time-out", "120"),                # xs:unsignedInt
+                ("request-timeout", "120"),                 # xs:unsignedInt
                 ("root", "Samples/"),                       # xs:string
-                ("session-time-out", "1800"),               # xs:unsignedInt
+                ("session-timeout", "1800"),                # xs:unsignedInt
                 ("ssl-allow-sslv3", "true"),                # xs:boolean
                 ("ssl-allow-tls", "true"),                  # xs:boolean
                 ("ssl-ciphers", "All"),                     # xs:string
@@ -96,7 +98,10 @@ class TestAppserverSet(boostertest.BoosterTestCase):
             params['setting'], params['value'] = pair
             response, body = self.booster.request(params)
             err = response.get("x-booster-error", "none")
+            self.assertEqual(response.status, 200)
             self.assertEqual(err, "none")
+            # sleep and allow service to restart
+            time.sleep(2)
 
     def test_appserver_set_on_nonexistent_appserver_results_in_404(self):
         """ Attempting set on a non-existent appserver should result in 404 """
@@ -106,7 +111,8 @@ class TestAppserverSet(boostertest.BoosterTestCase):
         params['value'] = "1"
         response, body = self.booster.request(params)
         err = response.get("x-booster-error", "none")
-        self.assertTrue(err.find("Group 'appserver-does-not-exist' does not exist") > -1)
+        self.assertEqual(response.status, 404)
+        self.assertTrue(err.find("Appserver 'appserver-does-not-exist' does not exist") > -1)
 
     def test_appserver_set_on_nonexistent_setting_results_in_404(self):
         """ Attempting set on a non-existent setting should result in 404 """
@@ -115,7 +121,8 @@ class TestAppserverSet(boostertest.BoosterTestCase):
         params['value'] = "1"
         response, body = self.booster.request(params)
         err = response.get("x-booster-error", "none")
-        self.assertTrue(err.find("Group setting 'fake-setting' does not exist") > -1)
+        self.assertEqual(response.status, 404)
+        self.assertTrue(err.find("Appserver setting 'fake-setting' does not exist") > -1)
 
     def test_appserver_set_with_missing_required_parameter_results_in_400(self):
         """ A missing but required parameter should result in 400 """

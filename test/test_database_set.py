@@ -100,6 +100,7 @@ class TestDatabaseSet(boostertest.BoosterTestCase):
             params['setting'], params['value'] = pair
             response, body = self.booster.request(params)
             err = response.get("x-booster-error", "none")
+            self.assertEqual(response.status, 200)
             self.assertEqual(err, "none")
 
     def test_database_set_on_nonexistent_database_results_in_404(self):
@@ -110,6 +111,7 @@ class TestDatabaseSet(boostertest.BoosterTestCase):
         params['value'] = "true"
         response, body = self.booster.request(params)
         err = response.get("x-booster-error", "none")
+        self.assertEqual(response.status, 404)
         self.assertTrue(err.find("Database 'db-does-not-exist' does not exist") > -1)
 
     def test_database_set_on_nonexistent_setting_results_in_404(self):
@@ -119,6 +121,7 @@ class TestDatabaseSet(boostertest.BoosterTestCase):
         params['value'] = "black"
         response, body = self.booster.request(params)
         err = response.get("x-booster-error", "none")
+        self.assertEqual(response.status, 404)
         self.assertTrue(err.find("Database setting 'batmans-cape' does not exist") > -1)
 
     def test_database_set_with_missing_required_parameter_results_in_400(self):

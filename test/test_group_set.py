@@ -80,6 +80,7 @@ class TestGroupSet(boostertest.BoosterTestCase):
             params['setting'], params['value'] = pair
             response, body = self.booster.request(params)
             err = response.get("x-booster-error", "none")
+            self.assertEqual(response.status, 200)
             self.assertEqual(err, "none")
 
     def test_group_set_on_nonexistent_group_results_in_404(self):
@@ -90,6 +91,7 @@ class TestGroupSet(boostertest.BoosterTestCase):
         params['value'] = "1"
         response, body = self.booster.request(params)
         err = response.get("x-booster-error", "none")
+        self.assertEqual(response.status, 404)
         self.assertTrue(err.find("Group 'group-does-not-exist' does not exist") > -1)
 
     def test_group_set_on_nonexistent_setting_results_in_404(self):
@@ -99,6 +101,7 @@ class TestGroupSet(boostertest.BoosterTestCase):
         params['value'] = "1"
         response, body = self.booster.request(params)
         err = response.get("x-booster-error", "none")
+        self.assertEqual(response.status, 404)
         self.assertTrue(err.find("Group setting 'fake-setting' does not exist") > -1)
 
     def test_group_set_with_missing_required_parameter_results_in_400(self):
