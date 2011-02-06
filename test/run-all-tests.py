@@ -33,6 +33,7 @@ if __name__=="__main__":
     all_modules = ("test_boundaries",
         "test_appserver_create_http", "test_appserver_create_webdav",
         "test_appserver_create_xdbc", "test_appserver_delete",
+        "test_appserver_set",
         "test_database_create", "test_database_delete",
         "test_database_forest", "test_database_set",
         "test_forest_create", "test_forest_delete",
