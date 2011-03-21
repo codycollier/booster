@@ -81,6 +81,16 @@ class TestAppserverDelete(boostertest.BoosterTestCase):
         self.assertEqual(response.status, 400)
         self.assertTrue(err.find("valid set of arguments was not provided") != 1)
 
+    def test_delete_appserver_in_nonexistent_group_results_in_500(self):
+        """ Attempting to delete a non-existent appserver should return 404 """
+        params = self.params
+        params['group-name'] = "no-such-group-exists-here"
+        response, body = self.booster.request(params)
+        err = response.get("x-booster-error", "")
+        self.assertEqual(response.status, 500)
+        self.assertTrue(err.find("Error running action 'appserver-delete'. Error: No such group") > -1)
+
+
 
 if __name__=="__main__":
 

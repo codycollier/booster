@@ -60,6 +60,17 @@ class TestAppserverCreateHTTP(boostertest.BoosterTestCase):
         self.assertEqual(response.status, 409)
         self.assertTrue(err.find("already exists") != -1)
 
+    def test_create_http_appserver_in_nonexistent_group_results_in_500(self):
+        """ An appserver-create-http should fail with 500 if group does not exist """
+        params = self.params
+        params['appserver-name'] = "http-crunch"
+        params['group-name'] = "there-is-no-such-group"
+        self.teardown_appservers.append("http-crunch")
+        response, body = self.booster.request(params)
+        err = response.get("x-booster-error", "none")
+        self.assertEqual(response.status, 500)
+        self.assertTrue(err.find("Error running action 'appserver-create-http'. Error: No such group") > -1)
+
     def test_create_http_appserver_with_invalid_name_results_in_500(self):
         """ An appserver-create-http with invalid appserver-name should be rejected by api and result in 500 """
         badnames = ("%%zxcggg", "$fbbhhjh$")

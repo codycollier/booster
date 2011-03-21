@@ -33,6 +33,7 @@ class TestAppserverSet(boostertest.BoosterTestCase):
         self.params = {}
         self.params['action'] = "appserver-set"
         self.params['appserver-name'] = params['appserver-name']
+        self.params['group-name'] = params['group-name']
 
     def tearDown(self):
         """ Remove items from server created during tests """
@@ -113,6 +114,17 @@ class TestAppserverSet(boostertest.BoosterTestCase):
         err = response.get("x-booster-error", "none")
         self.assertEqual(response.status, 404)
         self.assertTrue(err.find("Appserver 'appserver-does-not-exist' does not exist") > -1)
+
+    def test_appserver_set_on_nonexistent_group_results_in_500(self):
+        """ Attempting set on an app server in non-existent group should result in 500 """
+        params = self.params
+        params['group-name'] = "not-a-group"
+        params['setting'] = "keep-alive-timeout"
+        params['value'] = "1"
+        response, body = self.booster.request(params)
+        err = response.get("x-booster-error", "none")
+        self.assertEqual(response.status, 500)
+        self.assertTrue(err.find("Error running action 'appserver-set'. Error: No such group") > -1)
 
     def test_appserver_set_on_nonexistent_setting_results_in_404(self):
         """ Attempting set on a non-existent setting should result in 404 """

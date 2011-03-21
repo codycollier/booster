@@ -146,6 +146,7 @@ declare variable $CONFIG:=
                 </option>
                 <option value="appserver-set">
                     <required>appserver-name</required>
+                    <required>group-name</required>
                     <required>setting</required>
                     <required>value</required>
                     <allowed-settings>
@@ -445,18 +446,20 @@ as empty-sequence()
  : call will then be dynamically generated and applied.
  : 
  : @param $appserver-name The name of the appserver to edit
+ : @param $group-name The name of the group in which the appserver resides
  : @param $setting The name of the setting to be changed
  : @param $value The value to apply to the setting
  : @return Returns 200 on success or 404 if appserver or setting do not exist
  :)
 declare function local:appserver-set($appserver-name as xs:string, 
-                    $setting as xs:string, $value as xs:string)
+                    $group-name as xs:string, $setting as xs:string, 
+                    $value as xs:string)
 as empty-sequence()
 {
     let $config := admin:get-configuration()
+    let $group-id := admin:group-get-id($config, $group-name)
     return
-        (: todo - should group constraint be integrated here? :)
-        if (fn:not(admin:appserver-exists($config, (), $appserver-name))) then (
+        if (fn:not(admin:appserver-exists($config, $group-id, $appserver-name))) then (
                 xdmp:set-response-code(404, "Not Found"),
                 xdmp:add-response-header("x-booster-error",
                     fn:concat("Appserver '", $appserver-name, "' does not exist")))
@@ -468,8 +471,7 @@ as empty-sequence()
                     xdmp:add-response-header("x-booster-error",
                         fn:concat("Appserver setting '", $setting, "' does not exist")))
                 else (
-                    (: todo - should group constraint be integrated here? :)
-                    let $appserver-id := admin:appserver-get-id($config, (), $appserver-name)
+                    let $appserver-id := admin:appserver-get-id($config, $group-id, $appserver-name)
                     (: cast the value according to the config specified @cast :)
                     let $val-type := $CONFIG//setting[text()=$setting]/@cast 
                     let $type-constructor := xdmp:function(xs:QName($val-type))
@@ -1032,6 +1034,9 @@ declare function local:action-handler() as item()*
             else if ($arg-count eq 3) then
                 xdmp:apply($action-function, $arg-values[1], $arg-values[2],
                             $arg-values[3])
+            else if ($arg-count eq 4) then
+                xdmp:apply($action-function, $arg-values[1], $arg-values[2],
+                            $arg-values[3], $arg-values[4])
             else if ($arg-count eq 5) then
                 xdmp:apply($action-function, $arg-values[1], $arg-values[2],
                             $arg-values[3], $arg-values[4], $arg-values[5])
