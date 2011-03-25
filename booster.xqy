@@ -14,7 +14,7 @@ xquery version "1.0-ml";
  :   accessible hook for automated configuration. 
  :
  :
- : Copyright 2010 Cody Collier (cody@telnet.org)
+ : Copyright 2010-2011 Cody Collier (cody@telnet.org)
  : 
  :   Licensed under the Apache License, Version 2.0 (the "License");
  :   you may not use this file except in compliance with the License.

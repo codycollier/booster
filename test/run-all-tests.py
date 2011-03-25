@@ -1,14 +1,14 @@
 #!/usr/bin/env python
 """ run-all-tests.py - run all of the functional tests for booster
 
-This is a simple shell script for running all of the booster functional tests 
+This is a simple script for running all of the booster functional tests 
 in a roughly random order.  The order of the test modules will be randomized 
 and the order of the tests in each module will be randomized.  The output will
 show one test (and result) per line.
 """
 
 """ 
-Copyright 2010 Cody Collier
+Copyright 2010-2011 Cody Collier
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
