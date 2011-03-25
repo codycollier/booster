@@ -114,6 +114,15 @@ declare variable $CONFIG:=
                 <option value="database-delete">
                   <required>database-name</required>
                 </option>
+                <option value="database-add-field"> 
+                    <required>database-name</required>
+                    <required>field-name</required>
+                    <required>include-root</required>
+                </option>
+                <option value="database-delete-field">
+                  <required>database-name</required>
+                  <required>field-name</required>
+                </option>
                 <option value="forest-create"> 
                     <required>forest-name</required>
                     <required>host-name</required>
@@ -665,6 +674,95 @@ as empty-sequence()
                         admin:save-configuration($new-config),
                         xdmp:set-response-code(200, "OK")))
 };
+(:---------- fields ------------------------------------------------------:)
+
+(:~
+ : Test for existence of a database field
+ :  (doesn't exist in ML api, so wraps: admin:dataase-get-field)
+ : 
+ : @param $database-name The name of the database where the field resides
+ : @param $field-name The name of the field
+ : @returns fn:true() if the field exists and fn:false() if it does not
+ :)
+declare function local:database-field-exists($database-name as xs:string, 
+                        $field-name as xs:string)
+as xs:boolean
+{
+    try {
+        let $config := admin:get-configuration()
+        let $database-id := xdmp:database($database-name)
+        let $_ := admin:database-get-field($config, $database-id, $field-name)
+        return
+            fn:true()
+    } catch ($err) {
+        fn:false()
+    }
+};
+
+(:~
+ : Create a database field
+ :   wraps: admin:database-add-field
+ : 
+ : @param $database-name The name of the documents db for the field
+ : @param $field-name The name of the field to be created
+ : @param $include-root Boolean indication of whether to start including at the root
+ : @return Returns status 201 on success and 409 if field already exists
+ :)
+declare function local:database-add-field($database-name as xs:string,
+                    $field-name as xs:string, $include-root as xs:string)
+as empty-sequence()
+{
+    let $config := admin:get-configuration()
+    return 
+        if (local:database-field-exists($database-name, $field-name)) then (
+            xdmp:set-response-code(409, "Conflict"),
+            xdmp:add-response-header("x-booster-error", 
+                fn:concat("Field '", $field-name, "' already exists")))
+        else (
+            let $database-id := xdmp:database($database-name)
+            let $_include-root := if ($include-root eq "true")
+                                    then (fn:true())
+                                    else (fn:false())
+            let $new-field := admin:database-field($field-name, $_include-root)
+            let $new-config := admin:database-add-field($config, $database-id, 
+                                    $new-field)
+            return
+                admin:save-configuration($new-config),
+                xdmp:set-response-code(201, "Created"))
+};
+
+(:~
+ : Delete a database field
+ :  wraps: admin:database-delete-field
+ : 
+ : @param $database-name The name of the db in which the field exists
+ : @param $field-name The name of the field to delete
+ : @return Returns status 200 on success and 404 if field does not exist
+ :)
+declare function local:database-delete-field($database-name as xs:string, 
+                    $field-name as xs:string)
+as empty-sequence()
+{
+    let $config := admin:get-configuration()
+    let $database-id := xdmp:database($database-name)
+    return
+        (: This is a special guard clause to prevent deleting the internal 
+         :  field that has an empty name. 
+         :)
+        if (fn:not(local:database-field-exists($database-name, $field-name))
+            or ($field-name eq ""))
+        then (
+            xdmp:set-response-code(404, "Not Found"),
+            xdmp:add-response-header("x-booster-error", 
+                fn:concat("Field '", $field-name, "' does not exist")))
+        else (
+            let $new-config := admin:database-delete-field($config, 
+                                    $database-id, $field-name)
+            return
+                admin:save-configuration($new-config),
+                xdmp:set-response-code(200, "Ok"))
+};
+
 
 (:---------- forests ---------------------------------------------------------:)
 

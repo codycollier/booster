@@ -66,14 +66,16 @@ class TestDatabaseAddField(boostertest.BoosterTestCase):
         response, body = self.booster.request(params)
         err = response.get("x-booster-error", "none")
         self.assertEqual(response.status, 500)
-        self.assertTrue(err.find("Error running action 'database-add-field'. Error: No such group") > -1)
+        self.assertTrue(err.find("Error running action 'database-add-field'. Error: No such database") > -1)
 
+    @boostertest.skiptest   # There are no bad names that I've seen yet
     def test_database_add_field_with_invalid_name_results_in_500(self):
         """ An database-add-field with invalid field-name should be rejected by api and result in 500 """
-        badnames = ("%%zxcggg7654", "$fb123bhhjh$")
+        badnames = (">>>>>>",)
         for badname in badnames:
             params = self.params
             params['field-name'] = badname
+            #self.teardown_fields.append(badname)
             # create should result in 500
             response, body = self.booster.request(params)
             err = response.get("x-booster-error", "none")
@@ -94,16 +96,21 @@ class TestDatabaseAddField(boostertest.BoosterTestCase):
 
     def test_database_add_field_with_empty_required_parameter_results_in_500(self):
         """ An empty but required parameter should result in 500 """
-        required_parameters = ("database-name", "field-name", "include-root")
+        # empty "include-root" is overridden to fn:false() so it won't fail 
+        required_parameters = ("database-name", "field-name")
         for rp in required_parameters:
             params = self.params.copy()
             params[rp] = ""
             # create should result in 500
             response, body = self.booster.request(params)
             err = response.get("x-booster-error", "none")
-            self.assertEqual(response.status, 500)
-            self.assertTrue(err.find("Error running action 'database-add-field'") != -1)
-            self.assertTrue(err.find("Error: ") != -1)
+            if rp == "field-name":
+                self.assertEqual(response.status, 409)
+                self.assertTrue(err.find("Field '' already exists") != -1)
+            else:
+                self.assertEqual(response.status, 500)
+                self.assertTrue(err.find("Error running action 'database-add-field'") != -1)
+                self.assertTrue(err.find("Error: ") != -1)
 
 
 if __name__=="__main__":

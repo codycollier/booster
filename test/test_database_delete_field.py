@@ -37,6 +37,7 @@ class TestDatabaseDeleteField(boostertest.BoosterTestCase):
         params['action'] = "database-add-field"
         params['database-name'] = "Documents"
         params['field-name'] = "field19"
+        params['include-root'] = "false"
         self.teardown_fields.append(params['field-name'])
         response, body = self.booster.request(params)
         err = response.get("x-booster-error", "none")
@@ -60,7 +61,12 @@ class TestDatabaseDeleteField(boostertest.BoosterTestCase):
         self.assertTrue(err.find("does not exist") != 1)
 
     def test_empty_field_name_results_in_404(self):
-        """ A database-delete-field with empty field-name value should result in 404 """
+        """ A database-delete-field with empty field-name value should result in 404 
+        
+        This tests the special guard clause in booster which prevents accidental 
+        deletion of the default internal field with an empty name.
+
+        """
         params = self.params
         params['field-name'] = ""
         response, body = self.booster.request(params)
@@ -80,7 +86,7 @@ class TestDatabaseDeleteField(boostertest.BoosterTestCase):
     def test_delete_database_field_in_nonexistent_database_results_in_500(self):
         """ Attempting to delete a non-existent appserver should return 404 """
         params = self.params
-        params['db-name'] = "no-such-db-exists-here"
+        params['database-name'] = "no-such-db-exists-here"
         response, body = self.booster.request(params)
         err = response.get("x-booster-error", "")
         self.assertEqual(response.status, 500)
