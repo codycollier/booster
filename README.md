@@ -41,13 +41,13 @@ Each http request must include a single action.  Each action then expects other 
 
 
 
-With a small amount of shell scripting, you can string together these http calls and completely automate the configuration of a new or existing MarkLogic cluster.  You can read more about why this might be useful and more about installation automation at WhyBooster.
+With a small amount of shell scripting, you can string together these http calls and completely automate the configuration of a new or existing MarkLogic cluster.  You can read more about why this might be useful and more about installation automation at [WhyBooster](https://github.com/codycollier/booster/wiki/WhyBooster).
 
 
-If you're ready for more details, you can read about the available actions on the [Actions] page.  You can find more examples on the [ActionExamples] page.
+If you're ready for more details, you can read about the available actions on the [Actions](https://github.com/codycollier/booster/wiki/Actions) page.  You can find more examples on the [ActionExamples](https://github.com/codycollier/booster/wiki/ActionExamples) page.
 
 
-You can view results from the functional test suite at TestResults.
+You can view results from the functional test suite at [TestResults](https://github.com/codycollier/booster/wiki/TestResults).
 
 
 
