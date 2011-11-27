@@ -3,7 +3,7 @@ Booster
 
 Booster is an xquery module which provides an http interface to a portion of the MarkLogic API for administrative tasks.  It is intended to reside within the default  Admin app server and provide a remotely accessible hook for automated configuration.
 
-The current release is [https://github.com/downloads/codycollier/booster/booster-0.2.xqy booster 0.2].
+The current release is [booster 0.2](https://github.com/downloads/codycollier/booster/booster-0.2.xqy).
 
 Requires: MarkLogic Server 4.2+
 
